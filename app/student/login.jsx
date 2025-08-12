@@ -17,7 +17,7 @@ export default function Login() {
         <Text style={styles.forgot}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={() => router.push("/student/home")}>
+      <TouchableOpacity style={styles.loginButton} onPress={() => router.push("/student/homePage")}>
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
 
