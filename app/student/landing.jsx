@@ -24,7 +24,14 @@ export default function LandingPage() {
           style={[styles.button, styles.loginButton]}
           onPress={() => router.push("/login")}
         >
-          <Text style={styles.loginText}>Login</Text>
+          <Text style={styles.loginText}>Login as Student</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.loginButton]}
+          onPress={() => router.push("/login")}
+        >
+          <Text style={styles.loginText}>Login as Administrator</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

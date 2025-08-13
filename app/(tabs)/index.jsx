@@ -16,7 +16,22 @@ export default function LandingPage() {
         style={styles.loginButton}
         onPress={() => router.push("/student/login")}
       >
-        <Text style={styles.buttonText}>Login</Text>
+        <Text style={styles.buttonText}>Login as Student
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={() => router.push("/student/login")}
+      >
+        <Text style={styles.buttonText}>Login as Administrator</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={() => router.push("/student/login")}
+      >
+        <Text style={styles.buttonText}>Login as Faculty</Text>
       </TouchableOpacity>
 
       {/* Go to Register */}
@@ -39,7 +54,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
-    width: 150,
+    width: 200,
     alignItems: "center",
   },
   registerButton: {
