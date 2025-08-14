@@ -29,7 +29,7 @@ export default function LandingPage() {
 
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={() => router.push("/student/login")}
+        onPress={() => router.push("/Faculty/FacultyHomepage")}
       >
         <Text style={styles.buttonText}>Login as Faculty</Text>
       </TouchableOpacity>
