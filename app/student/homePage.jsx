@@ -58,13 +58,13 @@ export default function StudentHome() {
             icon={<FontAwesome5 name="trophy" size={28} color="#146ED7" />}
             title="Leaderboard"
             subtitle="Be the best"
-            onPress={() => router.push("/student/leaderboard")}
+            onPress={() => router.push("/student/leaderBoard")}
           />
           <FeatureCard
             icon={<MaterialIcons name="work" size={28} color="#146ED7" />}
             title="Project"
             subtitle="Build success"
-            onPress={() => router.push("/student/projects")}
+            onPress={() => router.push("/student/projectManagement")}
           />
         </View>
 
@@ -93,6 +93,34 @@ export default function StudentHome() {
             <Text>📤 Share</Text>
           </View>
         </View>
+
+
+        <View style={styles.postCard}>
+          <View style={styles.postHeader}>
+            <Image
+              source={{ uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
+              style={styles.postAvatar}
+            />
+            <View>
+              <Text style={styles.postName}>Shravan Devrukhkar</Text>
+              <Text style={styles.postSubtitle}>3rd Year Diploma Computer Engineering Student</Text>
+            </View>
+          </View>
+          <Text style={styles.postText}>
+            I'm thrilled to announce that I've successfully completed not one, but two internships this summer...
+          </Text>
+          <Image
+            source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
+            style={styles.postImage}
+          />
+          <View style={styles.postActions}>
+            <Text>👍 Like</Text>
+            <Text>💬 Comment</Text>
+            <Text>📤 Share</Text>
+          </View>
+        </View>
+
+        
 
       </ScrollView>
 
