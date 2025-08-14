@@ -9,7 +9,7 @@ export default function StudentHome() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
-        
+
         {/* Header */}
         <Text style={styles.header}>UniFlow CS</Text>
 
@@ -169,7 +169,8 @@ const styles = StyleSheet.create({
   },
   featureTitle: { fontWeight: "bold", marginTop: 5 },
   featureSubtitle: { fontSize: 12, color: "#555", textAlign: "center" },
-  postCard: { backgroundColor: "#fff", padding: 12, margin: 10, borderRadius: 15,
+  postCard: {
+    backgroundColor: "#fff", padding: 12, margin: 10, borderRadius: 15,
     shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2
   },
   postHeader: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
