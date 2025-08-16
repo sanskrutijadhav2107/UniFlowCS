@@ -260,7 +260,7 @@ export default function AdminHome() {
 
           <TouchableOpacity
             style={styles.featureButton}
-            onPress={() => alert("Monitor Subject Progress Clicked")}
+            onPress={() => router.push("/Admin/AdminSubjectMonitor")}
           >
             <MaterialCommunityIcons name="chart-line" size={40} color="#146ED7" />
             <Text style={styles.featureText}>Monitor Subject Progress</Text>
