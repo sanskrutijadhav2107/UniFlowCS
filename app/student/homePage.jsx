@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function StudentHome() {
   const router = useRouter();
@@ -9,7 +10,6 @@ export default function StudentHome() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
-
         {/* Header */}
         <Text style={styles.header}>UniFlow CS</Text>
 
@@ -28,47 +28,47 @@ export default function StudentHome() {
           </View>
         </View>
 
-        {/* Feature Grid with Navigation */}
+        {/* Feature Grid */}
         <View style={styles.grid}>
           <FeatureCard
-            icon={<MaterialIcons name="menu-book" size={28} color="#146ED7" />}
+            icon={<MaterialIcons name="menu-book" size={28} color="#2d6eefff" />}
             title="Notes"
             subtitle="Learn anytime"
             onPress={() => router.push("/student/notes")}
           />
           <FeatureCard
-            icon={<Ionicons name="notifications" size={28} color="#146ED7" />}
+            icon={<Ionicons name="notifications" size={28} color="#2d6eefff" />}
             title="Notice Board"
             subtitle="Stay Updated"
             onPress={() => router.push("/student/noticeBoard")}
           />
           <FeatureCard
-            icon={<Ionicons name="calendar" size={28} color="#146ED7" />}
+            icon={<Ionicons name="calendar" size={28} color="#2d6eefff" />}
             title="TimeTable"
             subtitle="Know what next"
             onPress={() => router.push("/student/timetable")}
           />
           <FeatureCard
-            icon={<Ionicons name="stats-chart" size={28} color="#146ED7" />}
+            icon={<Ionicons name="stats-chart" size={28} color="#2d6eefff" />}
             title="Dashboard"
             subtitle="Track your progress"
             onPress={() => router.push("/student/AcademicDashboard")}
           />
           <FeatureCard
-            icon={<FontAwesome5 name="trophy" size={28} color="#146ED7" />}
+            icon={<FontAwesome5 name="trophy" size={28} color="#2d6eefff" />}
             title="Leaderboard"
             subtitle="Be the best"
             onPress={() => router.push("/student/leaderBoard")}
           />
           <FeatureCard
-            icon={<MaterialIcons name="work" size={28} color="#146ED7" />}
+            icon={<MaterialIcons name="work" size={28} color="#2d6eefff" />}
             title="Project"
             subtitle="Build success"
             onPress={() => router.push("/student/projectManagement")}
           />
         </View>
 
-        {/* Mock Post */}
+                {/* Mock Post */}
         <View style={styles.postCard}>
           <View style={styles.postHeader}>
             <Image
@@ -120,20 +120,12 @@ export default function StudentHome() {
           </View>
         </View>
 
-        
 
       </ScrollView>
+      
 
-      {/* Floating Rounded Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="document-text" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><FontAwesome5 name="trophy" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={28} color="#146ED7" /></TouchableOpacity>
-      </View>
+      {/* Bottom Navbar */}
+      <BottomNavbar active="home" />
     </View>
   );
 }
@@ -150,26 +142,27 @@ function FeatureCard({ icon, title, subtitle, onPress }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FBFF" },
-  header: { fontSize: 22, fontWeight: "bold", color: "#146ED7", textAlign: "center", marginVertical: 10 },
+  header: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginVertical: 10 },
   gpaCard: {
     flexDirection: "row", alignItems: "center", backgroundColor: "#fff",
     margin: 10, padding: 12, borderRadius: 15,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, elevation: 3
+    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, elevation: 3,
   },
   avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 10 },
   greeting: { fontSize: 16, fontWeight: "bold" },
   gpaBar: { height: 10, backgroundColor: "#E0E0E0", borderRadius: 5, marginTop: 5, width: "80%" },
-  gpaFill: { height: 10, backgroundColor: "#146ED7", borderRadius: 5, width: "79%" },
+  gpaFill: { height: 10, backgroundColor: "#2d6eefff", borderRadius: 5, width: "79%" },
   gpaText: { marginTop: 5, fontSize: 12, fontWeight: "bold" },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around", marginVertical: 10 },
   featureCard: {
     width: "40%", backgroundColor: "#fff", padding: 15, borderRadius: 15,
     alignItems: "center", marginVertical: 8,
-    shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 3, elevation: 2
+    shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
   featureTitle: { fontWeight: "bold", marginTop: 5 },
   featureSubtitle: { fontSize: 12, color: "#555", textAlign: "center" },
-  postCard: {
+
+   postCard: {
     backgroundColor: "#fff", padding: 12, margin: 10, borderRadius: 15,
     shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2
   },
@@ -180,29 +173,6 @@ const styles = StyleSheet.create({
   postText: { marginVertical: 5 },
   postImage: { width: "100%", height: 150, borderRadius: 10, marginTop: 5 },
   postActions: { flexDirection: "row", justifyContent: "space-around", marginTop: 10 },
-  bottomNav: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    backgroundColor: "#fff", position: "absolute", bottom: 15, left: 20, right: 20,
-    borderRadius: 40, paddingVertical: 10,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
-  },
-  addButton: {
-    backgroundColor: "#146ED7", width: 50, height: 50, borderRadius: 25,
-    justifyContent: "center", alignItems: "center", shadowColor: "#000",
-    shadowOpacity: 0.15, shadowRadius: 5, elevation: 4
-  }
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 

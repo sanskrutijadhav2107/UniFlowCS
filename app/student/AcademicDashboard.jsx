@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function MarksGPA() {
   const [marks, setMarks] = useState({ AJP: "", DA: "", SET: "", OS: "", ED: "" });
@@ -80,24 +81,8 @@ export default function MarksGPA() {
         />
       </ScrollView>
 
-      {/* Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity>
-          <Ionicons name="home" size={24} color="#0C2D57" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialIcons name="description" size={24} color="#0C2D57" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItemCenter}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="trophy" size={24} color="#0C2D57" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="person" size={24} color="#0C2D57" />
-        </TouchableOpacity>
-      </View>
+       {/* Bottom Navbar */}
+                 <BottomNavbar active="home" />
     </View>
   );
 }
@@ -148,27 +133,6 @@ const styles = StyleSheet.create({
   },
   calcButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   chartTitle: { textAlign: "center", fontWeight: "bold", fontSize: 16, marginTop: 15 },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  navItemCenter: {
-    backgroundColor: "#0C2D57",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: -30,
-  },
+ 
+
 });

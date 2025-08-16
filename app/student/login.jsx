@@ -32,11 +32,11 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", color: "#146ED7", textAlign: "center", marginBottom: 5 },
-  subtitle: { fontSize: 14, textAlign: "center", marginBottom: 20 },
-  input: { backgroundColor: "#E6F0FF", padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#146ED7", marginBottom: 15 },
-  forgot: { color: "#146ED7", fontSize: 12, textAlign: "right", marginBottom: 20 },
-  loginButton: { backgroundColor: "#146ED7", paddingVertical: 12, borderRadius: 8 },
+  title: { fontSize: 24, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginBottom: 5 },
+  subtitle: { fontSize: 14, textAlign: "center", marginBottom: 80, marginTop : 2},
+  input: { backgroundColor: "#E6F0FF", padding: 16, borderRadius: 8, borderWidth: 1, borderColor: "#2d6eefff", marginBottom: 25 },
+  forgot: { color: "#2d6eefff", fontSize: 12, textAlign: "right", marginBottom: 20 },
+  loginButton: { backgroundColor: "#2d6eefff", paddingVertical: 12, borderRadius: 8 },
   loginText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "bold" },
   orText: { textAlign: "center", marginVertical: 10, color: "#777" },
   createAccount: { textAlign: "center", color: "#000", fontSize: 14 },

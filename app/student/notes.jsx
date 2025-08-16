@@ -3,6 +3,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function NotesPage() {
   const router = useRouter();
@@ -64,16 +65,11 @@ export default function NotesPage() {
         </View>
       </ScrollView>
 
-      {/* Floating Rounded Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="document-text" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={26} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><FontAwesome5 name="trophy" size={24} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={26} color="#146ED7" /></TouchableOpacity>
-      </View>
+
+      {/* Bottom Navbar */}
+            <BottomNavbar active="home" />
+
+      
     </View>
   );
 }
@@ -101,14 +97,5 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 13, textAlign: "center", fontWeight: "500", marginTop: 8 },
 
-  bottomNav: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    backgroundColor: "#fff", position: "absolute", bottom: 15, left: 20, right: 20,
-    borderRadius: 40, paddingVertical: 10,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
-  },
-  addButton: {
-    backgroundColor: "#146ED7", width: 50, height: 50, borderRadius: 25,
-    justifyContent: "center", alignItems: "center"
-  }
+
 });

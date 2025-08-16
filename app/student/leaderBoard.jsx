@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function Leaderboard() {
   const topPlayers = [
@@ -67,16 +68,8 @@ export default function Leaderboard() {
         ))}
       </ScrollView>
 
-      {/* Floating Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="search" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><FontAwesome5 name="trophy" size={24} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={26} color="#146ED7" /></TouchableOpacity>
-      </View>
+       {/* Bottom Navbar */}
+                 <BottomNavbar active="home" />
     </View>
   );
 }
@@ -152,15 +145,5 @@ const styles = StyleSheet.create({
   listName: { fontSize: 15, fontWeight: "600", color: "#333" },
   listPoints: { fontSize: 14, color: "#146ED7", fontWeight: "600" },
 
-  bottomNav: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    backgroundColor: "#fff", position: "absolute", bottom: 15, left: 20, right: 20,
-    borderRadius: 40, paddingVertical: 12,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
-  },
-  addButton: {
-    backgroundColor: "#146ED7", width: 55, height: 55, borderRadius: 27.5,
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 5, elevation: 4
-  }
+
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 
 import {
@@ -79,16 +80,8 @@ export default function InnovationPage() {
         ))}
       </ScrollView>
 
-      {/* Bottom Navigation */}
-     <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="document-text" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><FontAwesome5 name="trophy" size={28} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={28} color="#146ED7" /></TouchableOpacity>
-      </View>
+     {/* Bottom Navbar */}
+               <BottomNavbar active="home" />
     </View>
   );
 }
@@ -145,16 +138,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontWeight: 'bold', fontSize: 14, marginTop: 5 },
   cardDesc: { fontSize: 12, color: '#555', marginVertical: 5 },
   cardButton: { color: '#1e64d4', fontWeight: 'bold', fontSize: 12 },
-   bottomNav: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    backgroundColor: "#fff", position: "absolute", bottom: 15, left: 20, right: 20,
-    borderRadius: 40, paddingVertical: 10,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
-  },
-  addButton: {
-    backgroundColor: "#146ED7", width: 50, height: 50, borderRadius: 25,
-    justifyContent: "center", alignItems: "center", shadowColor: "#000",
-    shadowOpacity: 0.15, shadowRadius: 5, elevation: 4
-  }
+
 
 });

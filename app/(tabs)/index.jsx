@@ -47,13 +47,13 @@ export default function LandingPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 5, color: "#146ED7" },
-  tagline: { fontSize: 16, color: "#333", marginBottom: 20 },
+  title: { fontSize: 28, fontWeight: "bold", marginBottom: 10, color: "#2d6eefff" },
+  tagline: { fontSize: 16, color: "#333", marginBottom: 50 },
   loginButton: {
-    backgroundColor: "#146ED7",
+    backgroundColor: "#2d6eefff",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 25,
     width: 200,
     alignItems: "center",
   },
