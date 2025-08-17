@@ -89,7 +89,7 @@ export default function MarksGPA() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#B3D7FF" },
-  header: { fontSize: 22, fontWeight: "bold", color: "#0C2D57", textAlign: "center", marginVertical: 10 },
+  header: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginVertical: 10 },
   gpaCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   calcButton: {
-    backgroundColor: "#0C2D57",
+    backgroundColor: "#2d6eefff",
     margin: 15,
     padding: 12,
     borderRadius: 8,

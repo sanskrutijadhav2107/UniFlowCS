@@ -2,12 +2,12 @@ import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
-export default function FacultyLogin() {
+export default function AdminLogin() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Faculty Login</Text>
+      <Text style={styles.title}>Admin Login</Text>
       <Text style={styles.subtitle}>Welcome back!</Text>
 
       {/* Phone Number Input */}
@@ -34,7 +34,7 @@ export default function FacultyLogin() {
       {/* Login Button */}
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={() => router.push("/Faculty/FacultyHomepage")}
+        onPress={() => router.push("/Admin/AdminHome")}
       >
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>

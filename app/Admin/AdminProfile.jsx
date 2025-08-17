@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import AdminNavbar from "./components/AdminNavbar";
 
 export default function ProfileScreen() {
   return (
@@ -47,26 +48,8 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity>
-          <Ionicons name="home" size={26} color="#146ED7" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="document-text" size={26} color="#146ED7" />
-        </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <View style={styles.addIconButton}>
-            <Ionicons name="add" size={28} color="#146ED7" />
-          </View>
-        </TouchableOpacity> */}
-        <TouchableOpacity>
-          <FontAwesome5 name="trophy" size={26} color="#146ED7" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="person-circle-outline" size={26} color="#146ED7" />
-        </TouchableOpacity>
-      </View>
+       {/* Bottom Navbar */}
+                <AdminNavbar />
     </View>
   );
 }
@@ -74,13 +57,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    backgroundColor: "#B8E6F2",
+    backgroundColor: "#146ED7",
     padding: 15,
     alignItems: "center",
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#000" },
+  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#fff" },
   sectionTitle: {
     backgroundColor: "#F2E2C4",
     paddingVertical: 10,
@@ -101,29 +84,13 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 15 },
   infoLabel: { fontWeight: "bold" },
   editButton: {
-    backgroundColor: "#B8E6F2",
+    backgroundColor: "#146ED7",
     paddingVertical: 10,
     borderRadius: 5,
     alignItems: "center",
     marginTop: 20,
     marginHorizontal: 100,
   },
-  editButtonText: { fontSize: 16, fontWeight: "bold" },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#E6F0FA",
-    marginHorizontal: 15,
-    marginBottom: 10,
-    paddingVertical: 10,
-    borderRadius: 30,
-  },
-  addIconButton: {
-    backgroundColor: "#146ED7",
-    padding: 10,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  editButtonText: { fontSize: 16, fontWeight: "bold", color: "#fff" },
+
 });

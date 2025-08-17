@@ -2,67 +2,87 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import * as Animatable from "react-native-animatable";
 
 export default function LandingPage() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>UniFlow CS</Text>
-      <Text style={styles.tagline}>Track. Learn. Achieve. Repeat</Text>
+      {/* Logo Animation */}
+      <Animatable.Image
+        animation="zoomIn"
+        iterationCount={1}
+        duration={1500}
+        easing="ease-out"
+        source={require("../../assets/images/uniflowcs.png")}
+        style={styles.logo}
+      />
 
-      {/* Go to Login */}
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() => router.push("/student/login")}
+      {/* Title */}
+      <Animatable.Text
+        animation="fadeInDown"
+        delay={500}
+        duration={1200}
+        style={styles.title}
       >
-        <Text style={styles.buttonText}>Login as Student
-        </Text>
-      </TouchableOpacity>
+        UniFlow CS
+      </Animatable.Text>
 
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() => router.push("/Admin/AdminHome")}
+      {/* Tagline */}
+      <Animatable.Text
+        animation="fadeInUp"
+        delay={1000}
+        duration={1200}
+        style={styles.tagline}
       >
-        <Text style={styles.buttonText}>Login as Administrator</Text>
-      </TouchableOpacity>
+        Track. Learn. Achieve. Repeat
+      </Animatable.Text>
 
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() => router.push("/Faculty/FacultyLogin")}
-      >
-        <Text style={styles.buttonText}>Login as Faculty</Text>
-      </TouchableOpacity>
+      {/* Buttons with staggered animation */}
+      <Animatable.View animation="fadeInUp" delay={1400} duration={1200}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => router.push("/student/login")}
+        >
+          <Text style={styles.buttonText}>Continue as Student</Text>
+        </TouchableOpacity>
+      </Animatable.View>
 
-      {/* Go to Register */}
-      <TouchableOpacity
-        style={styles.registerButton}
-        onPress={() => router.push("/student/register")}
-      >
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
+      <Animatable.View animation="fadeInUp" delay={1700} duration={1200}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => router.push("/Admin/AdminLogin")}
+        >
+          <Text style={styles.buttonText}>Continue as Administrator</Text>
+        </TouchableOpacity>
+      </Animatable.View>
+
+      <Animatable.View animation="fadeInUp" delay={2000} duration={1200}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => router.push("/Faculty/FacultyLogin")}
+        >
+          <Text style={styles.buttonText}>Continue as Faculty</Text>
+        </TouchableOpacity>
+      </Animatable.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 10, color: "#2d6eefff" },
-  tagline: { fontSize: 16, color: "#333", marginBottom: 50 },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
+  logo: { width: 160, height: 160, marginBottom: 20, resizeMode: "contain" },
+  title: { fontSize: 36, fontWeight: "bold", marginBottom: 10, color: "#2d6eefff" },
+  tagline: { fontSize: 18, color: "#444", marginBottom: 40, fontStyle: "italic" },
   loginButton: {
     backgroundColor: "#2d6eefff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 25,
-    width: 200,
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 20,
+    width: 240,
     alignItems: "center",
   },
-  registerButton: {
-    backgroundColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
-    width: 150,
-    alignItems: "center",
-  },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
 });
+

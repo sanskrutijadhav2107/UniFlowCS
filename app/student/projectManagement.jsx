@@ -74,7 +74,7 @@ export default function InnovationPage() {
             <Text style={styles.cardTitle}>{card.title}</Text>
             <Text style={styles.cardDesc}>{card.description}</Text>
             <TouchableOpacity>
-              <Text style={styles.cardButton}>Start Test</Text>
+              <Text style={styles.cardButton}>Read More..</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -128,7 +128,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginRight: 15,
-    width: 150,
+    width: 250,
+    height: 220,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,

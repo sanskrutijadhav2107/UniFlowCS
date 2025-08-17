@@ -10,6 +10,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import AdminNavbar from "./components/AdminNavbar";
 
 export default function ManageFaculty() {
   const [search, setSearch] = useState("");
@@ -41,7 +42,8 @@ export default function ManageFaculty() {
         </View>
 
         {/* Manage Faculty Button */}
-        <TouchableOpacity style={styles.manageButton}>
+        <TouchableOpacity style={styles.manageButton}
+           onPress={() => router.push("/Admin/EditFaculty")}>
           <Text style={styles.manageButtonText}>Manage Faculty</Text>
         </TouchableOpacity>
 
@@ -84,26 +86,11 @@ export default function ManageFaculty() {
         ))}
       </ScrollView>
 
+     
+
       {/* Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity>
-          <Ionicons name="home" size={26} color="#0A4D8C" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="document-text" size={26} color="#0A4D8C" />
-        </TouchableOpacity>
-        {/* <TouchableOpacity>
-          <View style={styles.addButton}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </View>
-        </TouchableOpacity> */}
-        <TouchableOpacity>
-          <FontAwesome5 name="trophy" size={26} color="#0A4D8C" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="person-circle-outline" size={26} color="#0A4D8C" />
-        </TouchableOpacity>
-      </View>
+            <AdminNavbar />
+
     </View>
   );
 }

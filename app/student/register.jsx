@@ -18,7 +18,7 @@ export default function Register() {
       <TextInput style={styles.input} placeholder="Create Password" secureTextEntry placeholderTextColor="#555" />
       <TextInput style={styles.input} placeholder="Confirm Password" secureTextEntry placeholderTextColor="#555" />
 
-      <TouchableOpacity style={styles.registerButton} onPress={() => router.push("/student/home")}>
+      <TouchableOpacity style={styles.registerButton} onPress={() => router.push("/student/homePage")}>
         <Text style={styles.registerText}>Register</Text>
       </TouchableOpacity>
 

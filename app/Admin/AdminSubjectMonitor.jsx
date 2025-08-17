@@ -1,7 +1,7 @@
+// app/Admin/AdminSubjectMonitor.jsx
 import React from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
-import { router } from "expo-router";
+import AdminNavbar from "./components/AdminNavbar";
 
 // Sample Data
 const subjects = [
@@ -15,19 +15,19 @@ export default function AdminSubjectMonitor() {
   return (
     <View style={styles.container}>
       {/* Title */}
-      <Text style={styles.title}> Monitor Subject Progress</Text>
+      <Text style={styles.title}>Monitor Subject Progress</Text>
 
-      {/* Subject Cards */}
+      {/* Subject List */}
       <FlatList
         data={subjects}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 120 }} // space for navbar
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.subject}>{item.subject}</Text>
             <Text style={styles.teacher}>{item.teacher}</Text>
 
-            {/* Progress bar */}
+            {/* Progress Bar */}
             <View style={styles.progressBarBackground}>
               <View
                 style={[
@@ -43,39 +43,14 @@ export default function AdminSubjectMonitor() {
         )}
       />
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <Ionicons
-          name="home"
-          size={26}
-          color="#146ED7"
-          onPress={() => router.push("/Admin/AdminHome")}
-        />
-        <Ionicons
-          name="document-text"
-          size={26}
-          color="#146ED7"
-          onPress={() => router.push("/Admin/noticeBoard")}
-        />
-        <FontAwesome5
-          name="trophy"
-          size={26}
-          color="#146ED7"
-          onPress={() => alert("Achievements Clicked")}
-        />
-        <Ionicons
-          name="person-circle-outline"
-          size={26}
-          color="#146ED7"
-          onPress={() => router.push("/Admin/AdminProfile")}
-        />
-      </View>
+      {/* Bottom Navbar */}
+      <AdminNavbar />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5", padding: 15 },
+  container: { flex: 1, backgroundColor: "#F5F5F5", paddingHorizontal: 15 },
   title: {
     fontSize: 25,
     fontWeight: "bold",
@@ -113,19 +88,5 @@ const styles = StyleSheet.create({
     color: "#333",
     marginTop: 5,
     fontWeight: "500",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#E6F0FA",
-    marginHorizontal: 15,
-    marginBottom: 10,
-    paddingVertical: 10,
-    borderRadius: 30,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
 });

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router"; // for getting params in Expo Router
+import BottomNavbar from "./BottomNavbar"; 
 
 export default function NotesTemplate() {
   const { subject, units } = useLocalSearchParams(); // Get data from navigation
@@ -26,15 +27,7 @@ export default function NotesTemplate() {
       </ScrollView>
 
       {/* Bottom Navbar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="document-text" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={26} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><Ionicons name="trophy" size={24} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={26} color="#146ED7" /></TouchableOpacity>
-      </View>
+            <BottomNavbar active="home" />
     </View>
   );
 }
