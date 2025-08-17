@@ -74,7 +74,7 @@ export default function App() {
     <NavIcon
       label="Home"
       icon="home-outline"
-      onPress={() => router.push("/home")}
+      onPress={() => router.push("/Faculty/FacultyHomePage")}
     />
     <NavIcon
       label="Upload Notes"
@@ -84,7 +84,7 @@ export default function App() {
     <NavIcon
       label="Ranking"
       icon="trophy-outline"
-      onPress={() => router.push("/ranking")}
+      onPress={() => router.push("/Faculty/FacultyLeaderBoard")}
     />
     <NavIcon
       label="TimeTable"
@@ -94,7 +94,7 @@ export default function App() {
     <NavIcon
       label="Profile"
       icon="person-outline"
-      onPress={() => router.push("/profile")}
+      onPress={() => router.push("Faculty/FacultyProfile")}
     />
   </View>
 </View>
