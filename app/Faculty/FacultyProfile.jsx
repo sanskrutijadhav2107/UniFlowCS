@@ -17,32 +17,30 @@ export default function Profile() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
+      {/* Profile Top Section */}
+      <View style={styles.topSection}>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>S</Text>
         </View>
-
         <Text style={styles.name}>Satish Nannavare</Text>
-
-        <View style={styles.infoRow}>
-          <Ionicons name="mail-outline" size={18} color="#146ED7" />
-          <Text style={styles.infoText}>satish@example.com</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={18} color="#146ED7" />
-          <Text style={styles.infoText}>+1 234 567 890</Text>
-        </View>
+        <Text style={styles.subtitle}>Assistant Professor</Text>
       </View>
 
-      {/* Bottom Navigation (your requested structure) */}
+      {/* Profile Details */}
+      <View style={styles.detailsSection}>
+        <ProfileRow icon="school-outline" label="Education" value="M.Tech Computer Science" />
+        <ProfileRow icon="book-outline" label="Subject" value="HTML, OOP, Microprocessor" />
+        <ProfileRow icon="call-outline" label="Phone" value="+91 234 567 890" />
+        <ProfileRow icon="mail-outline" label="Email" value="satish@example.com" />
+      </View>
+
+      {/* Bottom Navigation */}
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
           <NavIcon
             label="Home"
             icon="home-outline"
-            onPress={() => router.push("/home")}
+            onPress={() => router.push("/Faculty/FacultyHomepage")}
           />
           <NavIcon
             label="Upload Notes"
@@ -62,9 +60,20 @@ export default function Profile() {
           <NavIcon
             label="Profile"
             icon="person-outline"
-            onPress={() => router.push("/Faculty/FacultyProfile")}
           />
         </View>
+      </View>
+    </View>
+  );
+}
+
+function ProfileRow({ icon, label, value }) {
+  return (
+    <View style={styles.infoRow}>
+      <Ionicons name={icon} size={20} color="#146ED7" />
+      <View style={{ marginLeft: 12 }}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
       </View>
     </View>
   );
@@ -92,64 +101,64 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
 
-  profileCard: {
+  topSection: {
     alignItems: "center",
+    paddingVertical: 25,
     backgroundColor: "#fff",
-    marginHorizontal: 15,
-    marginTop: 20,
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
   avatarCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: "#A78BFA",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
   },
-  avatarText: { color: "#fff", fontSize: 36, fontWeight: "bold" },
-  name: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
+  name: { fontSize: 22, fontWeight: "bold", color: "#222" },
+  subtitle: { fontSize: 15, color: "#555", marginTop: 4 },
 
+  detailsSection: {
+    backgroundColor: "#fff",
+    marginTop: 15,
+    padding: 20,
+  },
   infoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 6,
+    alignItems: "flex-start",
+    marginBottom: 18,
   },
-  infoText: { fontSize: 16, marginLeft: 10, color: "#333" },
+  infoLabel: { fontSize: 13, color: "#777" },
+  infoValue: { fontSize: 16, fontWeight: "500", color: "#222" },
 
   bottomNavContainer: {
-  position: "absolute",  // Stick it to the bottom
-  bottom: 0,
-  left: 0,
-  right: 0,
-  alignItems: "center",
-  paddingVertical: 10,
-  backgroundColor: "#fff",
-  borderTopWidth: 0.5,
-  borderTopColor: "#ddd",
-},
-bottomNav: {
-  flexDirection: "row",
-  justifyContent: "space-around",
-  width: "90%",
-  backgroundColor: "#2d6eefff",
-  borderRadius: 30,
-  paddingVertical: 10,
-  paddingHorizontal: 5,
-  elevation: 5,
-  shadowColor: "#000",
-  shadowOpacity: 0.2,
-  shadowRadius: 5,
-  shadowOffset: { width: 0, height: 3 },
-},
-
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    borderTopWidth: 0.5,
+    borderTopColor: "#ddd",
+  },
+  bottomNav: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "90%",
+    backgroundColor: "#2d6eefff",
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+  },
   navItem: { alignItems: "center" },
   navLabel: { fontSize: 12, color: "#fff", marginTop: 2 },
 });

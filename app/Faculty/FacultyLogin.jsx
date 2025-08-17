@@ -8,7 +8,7 @@ export default function FacultyLogin() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Faculty Login</Text>
-      <Text style={styles.subtitle}>Welcome back! Let’s continue your journey….</Text>
+      <Text style={styles.subtitle}>Welcome back!</Text>
 
       {/* Phone Number Input */}
       <TextInput
@@ -39,13 +39,9 @@ export default function FacultyLogin() {
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
 
-      {/* Divider */}
-      <Text style={styles.orText}>OR</Text>
+      
 
-      {/* Create Account */}
-      <TouchableOpacity onPress={() => router.push("/Faculty/FacultyRegister")}>
-        <Text style={styles.createAccount}>Create new account</Text>
-      </TouchableOpacity>
+      
     </View>
   );
 }

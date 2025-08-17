@@ -1,20 +1,22 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 
 export default function Leaderboard() {
+  const router = useRouter();
+
   const topPlayers = [
-    { rank: 2, name: "Meghan", points: 40, image: require("../../assets/images/user.png") },
-    { rank: 1, name: "Bryan", points: 43, image: require("../../assets/images/user.png") },
-    { rank: 3, name: "Alex", points: 38, image: require("../../assets/images/user.png") },
+    { rank: 2, name: "Farhan", points: 40, image: require("../../assets/images/user.png") },
+    { rank: 1, name: "Priya", points: 43, image: require("../../assets/images/user.png") },
+    { rank: 3, name: "Atharv", points: 38, image: require("../../assets/images/user.png") },
   ];
 
   const listPlayers = [
-    { rank: 4, name: "Sanskruti", points: 37, image: require("../../assets/images/user.png") },
-    { rank: 5, name: "Riya", points: 35, image: require("../../assets/images/user.png") },
-    { rank: 6, name: "You", points: 33, image: require("../../assets/images/user.png") },
-    
+    { rank: 4, name: "Nikhil", points: 37, image: require("../../assets/images/user.png") },
+    { rank: 5, name: "Kunal", points: 35, image: require("../../assets/images/user.png") },
+    { rank: 6, name: "Swara", points: 33, image: require("../../assets/images/user.png") },
   ];
 
   return (
@@ -67,17 +69,45 @@ export default function Leaderboard() {
         ))}
       </ScrollView>
 
-      {/* Floating Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity><Ionicons name="home" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="search" size={26} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity><FontAwesome5 name="trophy" size={24} color="#146ED7" /></TouchableOpacity>
-        <TouchableOpacity><Ionicons name="person" size={26} color="#146ED7" /></TouchableOpacity>
+      {/* ✅ Bottom Navigation (same as FacultyHomePage) */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          <NavIcon
+            label="Home"
+            icon="home-outline"
+            onPress={() => router.push("/Faculty/FacultyHomepage")}
+          />
+          <NavIcon
+            label="Upload Notes"
+            icon="cloud-upload-outline"
+            onPress={() => router.push("/Faculty/FacultyUploadNotes")}
+          />
+          <NavIcon
+            label="Ranking"
+            icon="trophy-outline"
+          />
+          <NavIcon
+            label="TimeTable"
+            icon="calendar-outline"
+            onPress={() => router.push("Faculty/FacultyTimeTable")}
+          />
+          <NavIcon
+            label="Profile"
+            icon="person-outline"
+            onPress={() => router.push("Faculty/FacultyProfile")}
+          />
+        </View>
       </View>
     </View>
+  );
+}
+
+function NavIcon({ label, icon, onPress }) {
+  return (
+    <TouchableOpacity style={styles.navItem} onPress={onPress}>
+      <Ionicons name={icon} size={26} color="#fff" />
+      <Text style={styles.navLabel}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -85,7 +115,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8faff" },
 
   header: {
-    paddingTop: 60, // Moved heading higher
+    paddingTop: 60,
     paddingBottom: 40,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
@@ -93,13 +123,13 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 5
+    elevation: 5,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 20
+    marginBottom: 20,
   },
   topRow: {
     flexDirection: "row",
@@ -117,7 +147,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 5
+    elevation: 5,
   },
   topImage: { width: 80, height: 80, borderRadius: 40 },
   crown: { fontSize: 20, marginTop: 4 },
@@ -145,22 +175,29 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginRight: 10
+    marginRight: 10,
   },
   rankText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
   listImage: { width: 45, height: 45, borderRadius: 22.5, marginRight: 10 },
   listName: { fontSize: 15, fontWeight: "600", color: "#333" },
   listPoints: { fontSize: 14, color: "#146ED7", fontWeight: "600" },
 
+  /* ✅ Bottom Nav Styles (from Faculty HomePage) */
+  bottomNavContainer: { alignItems: "center", paddingVertical: 10, backgroundColor: "#fff" },
   bottomNav: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    backgroundColor: "#fff", position: "absolute", bottom: 15, left: 20, right: 20,
-    borderRadius: 40, paddingVertical: 12,
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "90%",
+    backgroundColor: "#2d6eefff",
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
   },
-  addButton: {
-    backgroundColor: "#146ED7", width: 55, height: 55, borderRadius: 27.5,
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 5, elevation: 4
-  }
+  navItem: { alignItems: "center" },
+  navLabel: { fontSize: 12, color: "#fff" },
 });

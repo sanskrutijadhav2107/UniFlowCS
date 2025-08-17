@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
@@ -6,18 +6,37 @@ import { useRouter } from "expo-router";
 export default function Timetable() {
   const router = useRouter();
 
-  const days = [
-    { label: "Su", color: "#4CAF50" },
-    { label: "M", color: "#FFC107" },
-    { label: "Tu", color: "#F44336" },
-    { label: "W", color: "#2196F3" },
-  ];
+  // All 6 days
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const subjects = [
-    { name: "Subject", time: "hh:mm to hh:mm", class: "FY/SY/TY" },
-    { name: "Subject", time: "hh:mm to hh:mm", class: "FY/SY/TY" },
-    { name: "Subject", time: "hh:mm to hh:mm", class: "FY/SY/TY" },
-  ];
+  // Example timetable data
+  const timetableData = {
+    Mon: [
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
+    ],
+    Tue: [
+      { name: "Hardware Lab", time: "9:00 - 10:00", class: "FY" },
+      { name: "DCN", time: "10:15 - 11:15", class: "SY" },
+    ],
+    Wed: [
+      { name: "English", time: "9:00 - 10:00", class: "FY" },
+      { name: "Economics", time: "10:15 - 11:15", class: "SY" },
+    ],
+    Thu: [
+      { name: "Computer Science", time: "9:00 - 10:00", class: "TY" },
+      { name: "Electronics", time: "10:15 - 11:15", class: "SY" },
+    ],
+    Fri: [
+      { name: "Statistics", time: "9:00 - 10:00", class: "FY" },
+      { name: "Environmental Science", time: "10:15 - 11:15", class: "TY" },
+    ],
+    Sat: [
+      { name: "Workshop", time: "9:00 - 11:00", class: "ALL" },
+    ],
+  };
+
+  const [selectedDay, setSelectedDay] = useState("Mon");
 
   return (
     <View style={styles.container}>
@@ -30,18 +49,29 @@ export default function Timetable() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Days */}
-      <View style={styles.dayRow}>
+      {/* Days Row (Horizontal Scroll) */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.dayRow}
+      >
         {days.map((day) => (
-          <View key={day.label} style={[styles.dayCircle, { backgroundColor: day.color }]}>
-            <Text style={styles.dayText}>{day.label}</Text>
-          </View>
+          <TouchableOpacity
+            key={day}
+            style={[
+              styles.dayCircle,
+              selectedDay === day ? styles.activeDay : styles.inactiveDay,
+            ]}
+            onPress={() => setSelectedDay(day)}
+          >
+            <Text style={styles.dayText}>{day}</Text>
+          </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       {/* Subjects */}
       <ScrollView contentContainerStyle={styles.subjectContainer}>
-        {subjects.map((sub, index) => (
+        {timetableData[selectedDay]?.map((sub, index) => (
           <View key={index} style={styles.subjectCard}>
             <Text style={styles.subjectName}>{sub.name}</Text>
             <Text style={styles.subjectDetail}>
@@ -54,13 +84,31 @@ export default function Timetable() {
         ))}
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <NavIcon label="Notes" icon="create-outline" onPress={() => router.push("/notes")} />
-        <NavIcon label="Timetable" icon="grid-outline" onPress={() => router.push("/timetable")} />
-        <NavIcon label="Post" icon="add-circle-outline" onPress={() => router.push("/post")} />
-        <NavIcon label="Notice" icon="document-text-outline" onPress={() => router.push("/notice")} />
-        <NavIcon label="You" icon="person-circle-outline" onPress={() => router.push("/profile")} />
+      {/* Bottom Nav */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          <NavIcon
+            label="Home"
+            icon="home-outline"
+            onPress={() => router.push("/Faculty/FacultyHomepage")}
+          />
+          <NavIcon
+            label="Upload Notes"
+            icon="cloud-upload-outline"
+            onPress={() => router.push("/Faculty/FacultyUploadNotes")}
+          />
+          <NavIcon
+            label="Ranking"
+            icon="trophy-outline"
+            onPress={() => router.push("/Faculty/FacultyLeaderBoard")}
+          />
+          <NavIcon label="TimeTable" icon="calendar-outline" />
+          <NavIcon
+            label="Profile"
+            icon="person-outline"
+            onPress={() => router.push("Faculty/FacultyProfile")}
+          />
+        </View>
       </View>
     </View>
   );
@@ -90,27 +138,34 @@ const styles = StyleSheet.create({
 
   dayRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    paddingHorizontal: 10,
     marginVertical: 15,
   },
   dayCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 87,
+    height: 87,
+    borderRadius: 43.5,
     justifyContent: "center",
     alignItems: "center",
+    marginHorizontal: 6,
+  },
+  activeDay: {
+    backgroundColor: "#146ED7",
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  inactiveDay: {
+    backgroundColor: "#afafafff",
   },
   dayText: { fontWeight: "bold", color: "#fff" },
 
   subjectContainer: { paddingHorizontal: 15, paddingBottom: 80 },
   subjectCard: {
     backgroundColor: "#EAF2FF",
-    padding: 15,
+    padding: 35,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
@@ -121,25 +176,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  subjectName: { fontSize: 18, fontWeight: "bold", marginBottom: 8, color: "#146ED7" },
-  subjectDetail: { fontSize: 14, color: "#333", marginBottom: 4 },
+  subjectName: { fontSize: 25, fontWeight: "bold", marginBottom: 8, color: "#146ED7" },
+  subjectDetail: { fontSize: 17, color: "#333", marginBottom: 4 },
   bold: { fontWeight: "bold" },
 
+  bottomNavContainer: { alignItems: "center", paddingVertical: 10, backgroundColor: "#fff" },
   bottomNav: {
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#146ED7",
-    marginHorizontal: 15,
-    marginBottom: 10,
-    paddingVertical: 10,
+    width: "90%",
+    backgroundColor: "#2d6eefff",
     borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
     elevation: 5,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
   },
   navItem: { alignItems: "center" },
-  navLabel: { fontSize: 12, color: "#fff", marginTop: 2 },
+  navLabel: { fontSize: 12, color: "#fff" },
 });

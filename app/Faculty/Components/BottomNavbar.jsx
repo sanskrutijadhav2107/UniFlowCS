@@ -9,71 +9,14 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Title */}
-        <Text style={styles.title}>Uniflow-CS</Text>
-
-        {/* Feature Buttons */}
-        <View style={styles.buttonGrid}>
-          <FeatureButton
-            onPress={() => router.push("/Faculty/FacultyUploadNotes")}
-            label="Upload Notes"
-            icon="cloud-upload-outline"
-          />
-          <FeatureButton
-            onPress={() => router.push("/Faculty/FacultyNotice")}
-            label="Notice"
-            icon="document-text-outline"
-          />
-        </View>
-
-        {/* Feed Posts */}
-        {[1, 2, 3].map((item) => (
-          <View key={item} style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <Image
-                source={{ uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
-                style={styles.postAvatar}
-              />
-              <View>
-                <Text style={styles.postName}>Shravan Devrukhkar</Text>
-                <Text style={styles.postSubtitle}>
-                  3rd Year Diploma Computer Engineering Student
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.postText}>
-              I'm thrilled to announce that I've successfully completed not one, but two internships this summer...
-            </Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
-              style={styles.postImage}
-            />
-            <View style={styles.postActions}>
-              <Text>👍 Like</Text>
-              <Text>💬 Comment</Text>
-              <Text>📤 Share</Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      {/* <View style={styles.bottomNavContainer}>
-        <View style={styles.bottomNav}>
-          <NavIcon label="Home" icon="home-outline" />
-          <NavIcon label="Upload Notes" icon="cloud-upload-outline" />
-          <NavIcon label="Ranking" icon="trophy-outline" />
-          <NavIcon label="TimeTable" icon="calendar-outline" />
-          <NavIcon label="Profile" icon="person-outline" />
-        </View>
-      </View> */}
+     
 
       <View style={styles.bottomNavContainer}>
   <View style={styles.bottomNav}>
     <NavIcon
       label="Home"
       icon="home-outline"
+      onPress={() => router.push("/Faculty/FacultyHomePage")}
     />
     <NavIcon
       label="Upload Notes"
@@ -110,14 +53,7 @@ function FeatureButton({ label, icon, onPress }) {
   );
 }
 
-// function NavIcon({ label, icon }) {
-//   return (
-//     <TouchableOpacity style={styles.navItem}>
-//       <Ionicons name={icon} size={24} color="#fff" />
-//       <Text style={styles.navLabel}>{label}</Text>
-//     </TouchableOpacity>
-//   );
-// }
+
 function NavIcon({ label, icon, onPress }) {
   return (
     <TouchableOpacity style={styles.navItem} onPress={onPress}>
