@@ -60,7 +60,7 @@ export default function UploadNotes() {
         </ScrollView>
       ) : (
         // Show Units for selected subject
-        <ScrollView contentContainerStyle={styles.unitsContainer}>
+        <View style={styles.unitsContainer}>
           {subjectUnits[selectedSubject].map((status, idx) => (
             <TouchableOpacity
               key={idx}
@@ -85,7 +85,7 @@ export default function UploadNotes() {
               </View>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       )}
 
       {/* Bottom Navigation */}
@@ -164,15 +164,21 @@ const styles = StyleSheet.create({
   },
 
   // Units Section
-  unitsContainer: { paddingHorizontal: 15, paddingBottom: 80 },
+  unitsContainer: {
+    flex: 1,
+    justifyContent: "space-between", // spread all 6 equally
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
   unitRow: {
+    flex: 1, // equal height for each unit
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#fff",
-    padding: 15,
+    paddingHorizontal: 15,
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: "#ddd",
     shadowColor: "#000",
