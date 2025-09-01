@@ -54,7 +54,7 @@ export default function LandingPage() {
           style={styles.loginButton}
           onPress={() => router.push("/Admin/AdminLogin")}
         >
-          <Text style={styles.buttonText}>Continue as Administrator</Text>
+          <Text style={styles.buttonText}>Continue as Admin</Text>
         </TouchableOpacity>
       </Animatable.View>
 
