@@ -113,33 +113,25 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
+
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase";
 import BottomNavbar from "./components/BottomNavbar";
 
@@ -147,6 +139,25 @@ export default function NoticeBoard() {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // For full-screen image modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState(null);
+
+  // Request media library permissions on mount
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== "web") {
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission required",
+            "Please enable media library permissions."
+          );
+        }
+      }
+    })();
+  }, []);
 
   const fetchNotices = async () => {
     try {
@@ -170,6 +181,24 @@ export default function NoticeBoard() {
   useEffect(() => {
     fetchNotices();
   }, []);
+
+  // Save image from URL to device gallery
+  const saveImageToGallery = async (imageUri) => {
+    try {
+      const fileUri = FileSystem.cacheDirectory + imageUri.split('/').pop();
+      const { uri } = await FileSystem.downloadAsync(imageUri, fileUri);
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert("Success", "Image saved to gallery!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save image: " + error.message);
+    }
+  };
+
+  // Open modal to show full-screen image
+  const openImageModal = (uri) => {
+    setSelectedImageUri(uri);
+    setModalVisible(true);
+  };
 
   if (loading) {
     return (
@@ -210,12 +239,23 @@ export default function NoticeBoard() {
               {/* Notice Text */}
               <View style={styles.noticeTextBox}>
                 <Text style={styles.noticeText}>{notice.description || notice.text}</Text>
+
                 {/* Show image if mediaUrl or imageUrl field exists */}
                 {(notice.mediaUrl || notice.imageUrl) && (
-                  <Image
-                    source={{ uri: notice.mediaUrl || notice.imageUrl }}
-                    style={styles.noticeImage}
-                  />
+                  <>
+                    <TouchableOpacity onPress={() => openImageModal(notice.mediaUrl || notice.imageUrl)}>
+                      <Image
+                        source={{ uri: notice.mediaUrl || notice.imageUrl }}
+                        style={styles.noticeImage}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.downloadButton}
+                      onPress={() => saveImageToGallery(notice.mediaUrl || notice.imageUrl)}
+                    >
+                      <Text style={styles.downloadText}>Download Image</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -223,10 +263,24 @@ export default function NoticeBoard() {
         )}
       </ScrollView>
 
+      {/* Full screen image modal */}
+      <Modal visible={modalVisible} transparent={true} animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalBackground}>
+            <Image
+              source={{ uri: selectedImageUri }}
+              style={styles.fullImage}
+              resizeMode="contain"
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       <BottomNavbar active="home" />
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#B3D7FF" },
@@ -294,5 +348,28 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     marginTop: 10,
+  },
+  downloadButton: {
+    backgroundColor: "#146ED7",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    alignSelf: "flex-start",
+  },
+  downloadText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "90%",
+    height: "80%",
+    borderRadius: 10,
   },
 });

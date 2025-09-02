@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true
     },
+     "permissions": ["READ_MEDIA_IMAGES","WRITE_EXTERNAL_STORAGE"],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/uniflowcs.png",
