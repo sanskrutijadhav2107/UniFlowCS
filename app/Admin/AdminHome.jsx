@@ -1,8 +1,7 @@
 // app/Admin/AdminHome.jsx
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AdminNavbar from "./components/AdminNavbar";
 
 export default function AdminHome() {
@@ -38,6 +37,14 @@ export default function AdminHome() {
           >
             <MaterialCommunityIcons name="chart-line" size={40} color="#146ED7" />
             <Text style={styles.featureText}>Monitor Subject Progress</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.featureButton}
+            onPress={() => router.push("/Admin/noticeBoard")}
+          >
+            <MaterialCommunityIcons name="chart-line" size={40} color="#146ED7" />
+            <Text style={styles.featureText}>Send Notice</Text>
           </TouchableOpacity>
         </View>
 

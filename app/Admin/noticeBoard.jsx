@@ -176,17 +176,17 @@
 
 
 
-
-
-
-
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -194,6 +194,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -207,85 +208,109 @@ import {
   serverTimestamp,
 } from "../../firebase"; // Adjust path to your firebase.js
 
-export default function NoticeBoard() {
+export default function AdminNoticeBoard() {
   const [notice, setNotice] = useState("");
   const [notices, setNotices] = useState([]);
+  const [mediaUri, setMediaUri] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState(null);
   const scrollViewRef = useRef();
 
-  const cloudName = "dveatasry"; // Your Cloudinary cloud name
-  const uploadPreset = "unsigned_preset"; // Your unsigned upload preset name
+  // Cloudinary config
+  const cloudName = "dveatasry"; // your Cloudinary cloud name
+  const uploadPreset = "unsigned_preset"; // your unsigned upload preset
 
   useEffect(() => {
+    // Ask media library permission (required for saving images)
+    (async () => {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Enable media library permissions to save images.");
+      }
+    })();
+
+    // Real-time listener to Firestore notices collection
     const q = query(collection(db, "notices"), orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const noticesList = [];
-      querySnapshot.forEach((doc) => {
-        noticesList.push({ id: doc.id, ...doc.data() });
-      });
-      setNotices(noticesList);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched = [];
+      snapshot.forEach((doc) => fetched.push({ id: doc.id, ...doc.data() }));
+      setNotices(fetched);
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Upload image to Cloudinary
   const uploadImageToCloudinary = async (uri) => {
     setUploading(true);
-    let formData = new FormData();
-    formData.append("file", {
-      uri: uri,
-      type: "image/jpeg",
-      name: "upload.jpg",
-    });
+    const formData = new FormData();
+    formData.append("file", { uri, type: "image/jpeg", name: "upload.jpg" });
     formData.append("upload_preset", uploadPreset);
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
-        { method: "POST", body: formData }
-      );
-      const data = await response.json();
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
       setUploading(false);
       return data.secure_url;
     } catch (error) {
-      console.error("Cloudinary upload error:", error);
+      Alert.alert("Upload error", error.message);
       setUploading(false);
       return null;
     }
   };
 
-  const addNotice = async (mediaUri = null) => {
-    if (notice.trim() === "" && !mediaUri) {
-      return;
-    }
-
-    let mediaUrl = null;
-    try {
-      if (mediaUri) {
-        mediaUrl = await uploadImageToCloudinary(mediaUri);
-      }
-
-      await addDoc(collection(db, "notices"), {
-        text: notice.trim() || null,
-        mediaUrl: mediaUrl || null,
-        postedBy: "Admin", // Replace with dynamic user if you have auth
-        createdAt: serverTimestamp(),
-      });
-
-      setNotice("");
-    } catch (error) {
-      console.error("Error adding notice: ", error);
-    }
-  };
-
+  // Pick image
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 1,
     });
-
     if (!result.canceled) {
-      addNotice(result.assets[0].uri);
+      setMediaUri(result.assets[0].uri);
+    }
+  };
+
+  // Add notice to Firestore (text + optional image)
+  const addNotice = async () => {
+    if (notice.trim() === "" && !mediaUri) return;
+
+    try {
+      let mediaUrl = null;
+      if (mediaUri) {
+        mediaUrl = await uploadImageToCloudinary(mediaUri);
+      }
+      await addDoc(collection(db, "notices"), {
+        text: notice.trim() || null,
+        mediaUrl: mediaUrl,
+        createdAt: serverTimestamp(),
+        postedBy: "Admin", // Change to logged-in user if applicable
+      });
+      setNotice("");
+      setMediaUri(null);
+    } catch (error) {
+      Alert.alert("Error", "Failed to post notice: " + error.message);
+    }
+  };
+
+  // Open full-screen image preview modal
+  const openImageModal = (uri) => {
+    setSelectedImageUri(uri);
+    setModalVisible(true);
+  };
+
+  // Save image locally on device
+  const saveImageToGallery = async (imageUri) => {
+    try {
+      const fileUri = FileSystem.cacheDirectory + imageUri.split("/").pop();
+      const { uri } = await FileSystem.downloadAsync(imageUri, fileUri);
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert("Success", "Image saved to gallery!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save image: " + error.message);
     }
   };
 
@@ -305,32 +330,32 @@ export default function NoticeBoard() {
         <ScrollView
           style={styles.list}
           ref={scrollViewRef}
-          onContentSizeChange={() =>
-            scrollViewRef.current.scrollToEnd({ animated: true })
-          }
+          onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}
         >
-          {notices.map((n, index) => (
+          {notices.map((n) => (
             <View key={n.id} style={styles.noticeRow}>
-              {/* Admin Avatar */}
               <Image
-                source={{
-                  uri: "https://cdn-icons-png.flaticon.com/512/219/219969.png",
-                }}
+                source={{ uri: "https://cdn-icons-png.flaticon.com/512/219/219969.png" }}
                 style={styles.avatar}
               />
-
-              {/* Chat Bubble */}
               <View style={styles.noticeBubble}>
                 {n.mediaUrl && (
-                  <Image source={{ uri: n.mediaUrl }} style={styles.noticeImage} />
+                  <>
+                    <TouchableOpacity onPress={() => openImageModal(n.mediaUrl)}>
+                      <Image source={{ uri: n.mediaUrl }} style={styles.noticeImage} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.downloadButton}
+                      onPress={() => saveImageToGallery(n.mediaUrl)}
+                    >
+                      <Text style={styles.downloadText}>Download</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
                 {n.text ? <Text style={styles.noticeText}>{n.text}</Text> : null}
                 <Text style={styles.noticeDate}>
                   {n.createdAt?.toDate
-                    ? n.createdAt.toDate().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                    ? n.createdAt.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                     : ""}
                 </Text>
               </View>
@@ -362,17 +387,24 @@ export default function NoticeBoard() {
           />
 
           {/* Send Button */}
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={() => addNotice()}
-          >
+          <TouchableOpacity style={styles.sendButton} onPress={addNotice}>
             <Ionicons name="send" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
+
+        {/* Fullscreen Image Modal */}
+        <Modal visible={modalVisible} transparent animationType="fade">
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.modalBackground}>
+              <Image source={{ uri: selectedImageUri }} style={styles.fullImage} resizeMode="contain" />
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   header: {
@@ -383,9 +415,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ddd",
   },
   headerTitle: { fontSize: 18, fontWeight: "bold" },
+
   list: { flex: 1, padding: 10 },
   noticeRow: { flexDirection: "row", marginBottom: 10, alignItems: "flex-end" },
   avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 8 },
+
   noticeBubble: {
     backgroundColor: "#DCF8C6",
     padding: 10,
@@ -427,4 +461,28 @@ const styles = StyleSheet.create({
     padding: 6,
     marginRight: 5,
   },
+  downloadButton: {
+    backgroundColor: "#0A4D8C",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    alignSelf: "flex-start",
+    marginBottom: 5,
+  },
+  downloadText: {
+    color: "white",
+    fontWeight: "600",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.90)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "90%",
+    height: "80%",
+    borderRadius: 10,
+  },
 });
+
