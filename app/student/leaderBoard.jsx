@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNavbar from "./components/BottomNavbar"; 
 

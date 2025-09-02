@@ -317,7 +317,7 @@ export default function StudentHome() {
             </View>
           </View>
           <Text style={styles.postText}>
-            Excited to be part of UniFlow 🚀! Let's learn and grow together.
+            Excited to be part of UniFlow 🚀! Let&apos;s learn and grow together.
           </Text>
           <Image
             source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
