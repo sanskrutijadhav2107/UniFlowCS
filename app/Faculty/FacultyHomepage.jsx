@@ -1,8 +1,7 @@
 
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function App() {
   const router = useRouter(); // ✅ Initialize router here
