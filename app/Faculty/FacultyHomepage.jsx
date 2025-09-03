@@ -42,7 +42,7 @@ export default function App() {
               </View>
             </View>
             <Text style={styles.postText}>
-              I'm thrilled to announce that I've successfully completed not one, but two internships this summer...
+              I&apos;m thrilled to announce that I&apos;ve successfully completed not one, but two internships this summer...
             </Text>
             <Image
               source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}

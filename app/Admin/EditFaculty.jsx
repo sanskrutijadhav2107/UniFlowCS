@@ -32,7 +32,7 @@ export default function EditFaculty() {
       }
     };
     if (id) fetchFaculty();
-  }, [id]);
+  }, [id, router]);
 
   // Save updates
   const handleSave = async () => {
