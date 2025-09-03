@@ -1,101 +1,152 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { db } from "../../firebase";
 
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import BottomNavbar from "./components/BottomNavbar"; 
+export default function StudentNotesPage() {
+  const [student, setStudent] = useState(null);
+  const [subjectsWithNotes, setSubjectsWithNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-export default function NotesPage() {
-  const router = useRouter();
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        // 1️⃣ Get student data from AsyncStorage
+        const stored = await AsyncStorage.getItem("student");
+        let studentData;
+        if (!stored) {
+          // Mock student (testing only)
+          studentData = { semester: 5, name: "Test Student" };
+        } else {
+          studentData = JSON.parse(stored);
+        }
+        setStudent(studentData);
 
-  const notesData = [
-    { 
-      id: 1, 
-      title: "Advance Java", 
-      icon: <Ionicons name="logo-javascript" size={44} color="#146ED7" />, 
-      units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5"]
-    },
-    { 
-      id: 2, 
-      title: "Data Analytics", 
-      icon: <MaterialIcons name="analytics" size={44} color="#146ED7" />, 
-      units: ["Intro to DA", "Data Cleaning", "Data Viz", "ML Basics", "Case Studies"]
-    },
-    { 
-      id: 3, 
-      title: "Software Eng", 
-      icon: <FontAwesome5 name="project-diagram" size={40} color="#146ED7" />, 
-      units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4"]
-    },
-    { 
-      id: 4, 
-      title: "Operating System", 
-      icon: <MaterialIcons name="computer" size={44} color="#146ED7" />, 
-      units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5"]
-    },
-    { 
-      id: 5, 
-      title: "Entrepreneurship Development", 
-      icon: <FontAwesome5 name="lightbulb" size={40} color="#146ED7" />, 
-      units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5", "Unit 6"]
-    },
-  ];
+        // 2️⃣ Get subjects of student's semester
+        const subjQuery = query(
+          collection(db, "subjects"),
+          where("semester", "==", studentData.semester)
+        );
+        const subjSnap = await getDocs(subjQuery);
+
+        if (subjSnap.empty) {
+          setSubjectsWithNotes([]);
+          return;
+        }
+
+        const subjectsList = [];
+
+        // 3️⃣ For each subject, fetch notes by subjectName
+        for (const subjDoc of subjSnap.docs) {
+          const subject = { id: subjDoc.id, ...subjDoc.data() };
+
+          const notesSnap = await getDocs(
+            query(
+              collection(db, "notes"),
+              where("subjectName", "==", subject.name)
+            )
+          );
+
+          const unitNotes = Array(6).fill(null);
+          notesSnap.docs.forEach((n) => {
+            const noteData = n.data();
+            if (noteData.locked === false || noteData.locked === undefined) {
+              unitNotes[noteData.unit - 1] = { id: n.id, ...noteData };
+            }
+          });
+
+          subject.notes = unitNotes;
+          subjectsList.push(subject);
+        }
+
+        setSubjectsWithNotes(subjectsList);
+      } catch (err) {
+        console.error("Error fetching notes:", err);
+        Alert.alert("Error", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#146ED7" />
+        <Text>Loading notes...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
-        <Text style={styles.header}>UniFlow CS</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>📚 Notes for Semester {student?.semester}</Text>
 
-        <View style={styles.grid}>
-          {notesData.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.card}
-              onPress={() => router.push({
-                pathname: "./components/notesTemplate",
-                params: { subject: item.title, units: JSON.stringify(item.units) }
-              })}
-            >
-              <View style={styles.iconCircle}>
-                {item.icon}
+      {subjectsWithNotes.length === 0 ? (
+        <Text style={styles.emptyText}>No subjects found for your semester.</Text>
+      ) : (
+        subjectsWithNotes.map((subj) => (
+          <View key={subj.id} style={styles.card}>
+            <Text style={styles.subjectTitle}>{subj.name}</Text>
+
+            {subj.notes.map((note, idx) => (
+              <View key={idx} style={styles.unitRow}>
+                <Text style={styles.unitText}>Unit {idx + 1}</Text>
+
+                {note ? (
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(note.fileUrl)}
+                    style={styles.openBtn}
+                  >
+                    <Text style={styles.openText}>Open</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.lockedText}>Locked 🔒</Text>
+                )}
               </View>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-
-      {/* Bottom Navbar */}
-            <BottomNavbar active="home" />
-
-      
-    </View>
+            ))}
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#D6EBFF" },
-  header: { fontSize: 22, fontWeight: "bold", color: "#146ED7", textAlign: "center", marginVertical: 15 },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
-
+  container: { flex: 1, backgroundColor: "#F5F5F5", padding: 10 },
+  header: { fontSize: 20, fontWeight: "bold", color: "#146ED7", marginBottom: 15, textAlign: "center" },
+  emptyText: { textAlign: "center", marginTop: 20, fontSize: 16, color: "#555" },
   card: {
-    alignItems: "center", margin: 12
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    elevation: 3,
   },
-  iconCircle: {
-    backgroundColor: "#fff", 
-    width: 120, 
-    height: 120, 
-    borderRadius: 60,
-    justifyContent: "center", 
+  subjectTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10, color: "#333" },
+  unitRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
   },
-  cardTitle: { fontSize: 13, textAlign: "center", fontWeight: "500", marginTop: 8 },
-
-
+  unitText: { fontSize: 15, color: "#333" },
+  openBtn: { backgroundColor: "#146ED7", paddingVertical: 5, paddingHorizontal: 12, borderRadius: 6 },
+  openText: { color: "#fff", fontWeight: "bold" },
+  lockedText: { color: "#DC3545", fontWeight: "bold" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

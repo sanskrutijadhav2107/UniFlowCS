@@ -1,34 +1,227 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { db } from "../../firebase";
+
+// 🔑 Cloudinary Config (if you’re still using Cloudinary)
+const CLOUD_NAME = "dveatasry";
+const UPLOAD_PRESET = "unsigned_preset";
 
 export default function UploadNotes() {
   const router = useRouter();
+  const [faculty, setFaculty] = useState(null);
+  const [assignedSubjects, setAssignedSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Subjects list
-  const subjects = ["DCN", "PP", "OOP", "DT"];
-
-  // Track currently selected subject
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [notesData, setNotesData] = useState({}); // subjectId → array of notes (per unit)
 
-  // Track units state for each subject (lock/unlock)
-  const [subjectUnits, setSubjectUnits] = useState({
-    DCN: Array(6).fill("Locked"),
-    PP: Array(6).fill("Locked"),
-    OOP: Array(6).fill("Locked"),
-    DT: Array(6).fill("Locked"),
-  });
+  // Load faculty + subjects
+  useEffect(() => {
+    const fetchFacultyAndSubjects = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("faculty");
+        if (!stored) {
+          Alert.alert("Error", "No faculty logged in");
+          router.push("/Faculty/FacultyLogin");
+          return;
+        }
 
-  // Toggle lock/unlock for a unit
-  const toggleUnit = (subject, index) => {
-    setSubjectUnits((prev) => {
-      const updated = { ...prev };
-      updated[subject][index] =
-        updated[subject][index] === "Locked" ? "Unlocked" : "Locked";
-      return updated;
-    });
+        const facultyData = JSON.parse(stored);
+        setFaculty(facultyData);
+
+        // Get assigned subjects
+        const q = query(
+          collection(db, "facultyAssignments"),
+          where("facultyId", "==", facultyData.id)
+        );
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          setAssignedSubjects([]);
+        } else {
+          const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          setAssignedSubjects(list);
+
+          // Load notes for each subject
+          const notesState = {};
+          for (const sub of list) {
+            const nq = query(
+              collection(db, "notes"),
+              where("subjectId", "==", sub.subjectId)
+            );
+            const nsnap = await getDocs(nq);
+
+            const unitNotes = Array(6).fill(null); // 6 units
+            nsnap.docs.forEach((d) => {
+              const nd = d.data();
+              unitNotes[nd.unit - 1] = { id: d.id, ...nd };
+            });
+
+            notesState[sub.subjectId] = unitNotes;
+          }
+          setNotesData(notesState);
+        }
+      } catch (error) {
+        console.error("Error loading faculty/subjects:", error);
+        Alert.alert("Error", "Could not load faculty subjects");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFacultyAndSubjects();
+  }, [router]);
+
+  // Upload new note
+  const handleUpload = async (subject, unitIndex) => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: "/" });
+      if (res.canceled) return;
+      const file = res.assets[0];
+
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("file", {
+        uri: file.uri,
+        type: file.mimeType || "application/pdf",
+        name: file.name || `unit-${unitIndex + 1}.pdf`,
+      });
+      formData.append("upload_preset", UPLOAD_PRESET);
+
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await cloudRes.json();
+      if (!data.secure_url) throw new Error("Cloudinary upload failed");
+
+      const fileUrl = data.secure_url;
+
+      // Delete old note if exists
+      const oldNote = notesData[subject.subjectId][unitIndex];
+      if (oldNote) {
+        await deleteDoc(doc(db, "notes", oldNote.id));
+      }
+
+      // Add new note
+      const docRef = await addDoc(collection(db, "notes"), {
+        subjectId: subject.subjectId,
+        subjectName: subject.subjectName,
+        unit: unitIndex + 1,
+        fileUrl,
+        uploadedBy: faculty?.name,
+        uploadedAt: serverTimestamp(),
+        locked: false, // ✅ Default unlocked
+      });
+
+      // Update local state
+      setNotesData((prev) => {
+        const updated = { ...prev };
+        updated[subject.subjectId][unitIndex] = {
+          id: docRef.id,
+          subjectId: subject.subjectId,
+          unit: unitIndex + 1,
+          fileUrl,
+          locked: false,
+        };
+        return updated;
+      });
+
+      Alert.alert("✅ Success", `Unit ${unitIndex + 1} notes uploaded!`);
+    } catch (err) {
+      console.error("Upload error:", err);
+      Alert.alert("❌ Error", err.message || "Failed to upload notes");
+    }
   };
+
+  // Delete note
+  const handleDelete = async (subject, unitIndex) => {
+    try {
+      const note = notesData[subject.subjectId][unitIndex];
+      if (!note) return;
+
+      await deleteDoc(doc(db, "notes", note.id));
+
+      // Update state
+      setNotesData((prev) => {
+        const updated = { ...prev };
+        updated[subject.subjectId][unitIndex] = null;
+        return updated;
+      });
+
+      Alert.alert("🗑 Deleted", `Unit ${unitIndex + 1} notes removed`);
+    } catch (err) {
+      console.error("Delete error:", err);
+      Alert.alert("❌ Error", "Could not delete note");
+    }
+  };
+
+  // Lock/Unlock note
+  const toggleLock = async (subject, unitIndex) => {
+    try {
+      const note = notesData[subject.subjectId][unitIndex];
+      if (!note) return;
+
+      const noteRef = doc(db, "notes", note.id);
+      const newLocked = !note.locked;
+
+      await updateDoc(noteRef, { locked: newLocked });
+
+      // Update state
+      setNotesData((prev) => {
+        const updated = { ...prev };
+        updated[subject.subjectId][unitIndex] = {
+          ...note,
+          locked: newLocked,
+        };
+        return updated;
+      });
+
+      Alert.alert(
+        "🔒 Status Changed",
+        `Unit ${unitIndex + 1} is now ${newLocked ? "Locked" : "Unlocked"}`
+      );
+    } catch (err) {
+      console.error("Lock toggle error:", err);
+      Alert.alert("❌ Error", "Could not change lock status");
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#007BFF" />
+        <Text>Loading your subjects...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -45,91 +238,73 @@ export default function UploadNotes() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Show Subjects if none selected */}
+      {/* Subject List */}
       {!selectedSubject ? (
         <ScrollView contentContainerStyle={styles.subjectList}>
-          {subjects.map((sub) => (
-            <TouchableOpacity
-              key={sub}
-              style={styles.subjectCard}
-              onPress={() => setSelectedSubject(sub)}
-            >
-              <Text style={styles.subjectCardText}>{sub}</Text>
-            </TouchableOpacity>
-          ))}
+          {assignedSubjects.length === 0 ? (
+            <Text style={{ textAlign: "center", marginTop: 20, color: "#555" }}>
+              No subjects assigned 📚
+            </Text>
+          ) : (
+            assignedSubjects.map((sub) => (
+              <TouchableOpacity
+                key={sub.subjectId}
+                style={styles.subjectCard}
+                onPress={() => setSelectedSubject(sub)}
+              >
+                <Text style={styles.subjectCardText}>{sub.subjectName}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       ) : (
-        // Show Units for selected subject
+        // Unit Upload Section
         <View style={styles.unitsContainer}>
-          {subjectUnits[selectedSubject].map((status, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={styles.unitRow}
-              onPress={() => toggleUnit(selectedSubject, idx)}
-            >
+          {notesData[selectedSubject.subjectId]?.map((note, idx) => (
+            <View key={idx} style={styles.unitRow}>
               <Text style={styles.unitText}>Unit {idx + 1}</Text>
-              <View
-                style={[
-                  styles.unitStatus,
-                  status === "Unlocked" ? styles.unlocked : styles.locked,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    status === "Unlocked" ? styles.unlockedText : styles.lockedText,
-                  ]}
+
+              {note ? (
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(note.fileUrl)}
+                    style={styles.actionBtn}
+                  >
+                    <Text style={styles.openText}>Open</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => toggleLock(selectedSubject, idx)}
+                    style={styles.actionBtn}
+                  >
+                    <Text style={{ color: note.locked ? "#DC3545" : "#28A745" }}>
+                      {note.locked ? "Unlock" : "Lock"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(selectedSubject, idx)}
+                    style={styles.actionBtn}
+                  >
+                    <Text style={styles.deleteText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => handleUpload(selectedSubject, idx)}
+                  style={styles.actionBtn}
                 >
-                  {status}
-                </Text>
-              </View>
-            </TouchableOpacity>
+                  <Text style={styles.uploadText}>Upload</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ))}
         </View>
       )}
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavContainer}>
-        <View style={styles.bottomNav}>
-          <NavIcon
-            label="Home"
-            icon="home-outline"
-            onPress={() => router.push("/Faculty/FacultyHomepage")}
-          />
-          <NavIcon label="Upload Notes" icon="cloud-upload-outline" />
-          <NavIcon
-            label="Ranking"
-            icon="trophy-outline"
-            onPress={() => router.push("/Faculty/FacultyLeaderBoard")}
-          />
-          <NavIcon
-            label="TimeTable"
-            icon="calendar-outline"
-            onPress={() => router.push("/Faculty/FacultyTimeTable")}
-          />
-          <NavIcon
-            label="Profile"
-            icon="person-outline"
-            onPress={() => router.push("/Faculty/FacultyProfile")}
-          />
-        </View>
-      </View>
     </View>
-  );
-}
-
-function NavIcon({ label, icon, onPress }) {
-  return (
-    <TouchableOpacity style={styles.navItem} onPress={onPress}>
-      <Ionicons name={icon} size={26} color="#fff" />
-      <Text style={styles.navLabel}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -139,82 +314,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-
-  // Subject Cards
-  subjectList: {
-    padding: 15,
-    paddingBottom: 80,
-  },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  subjectList: { padding: 15, paddingBottom: 80 },
   subjectCard: {
     backgroundColor: "#0056b3",
     borderRadius: 12,
     paddingVertical: 30,
     alignItems: "center",
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
-  subjectCardText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-
-  // Units Section
-  unitsContainer: {
-    flex: 1,
-    justifyContent: "space-between", // spread all 6 equally
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
+  subjectCardText: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  unitsContainer: { flex: 1, padding: 15 },
   unitRow: {
-    flex: 1, // equal height for each unit
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#fff",
-    paddingHorizontal: 15,
+    padding: 12,
     borderRadius: 10,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: "#ddd",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
   unitText: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  unitStatus: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 },
-  unlocked: { backgroundColor: "#D4F5E4" },
-  locked: { backgroundColor: "#FADAD8" },
-  statusText: { fontWeight: "bold", fontSize: 12 },
-  unlockedText: { color: "#28A745" },
-  lockedText: { color: "#DC3545" },
-
-  // Bottom Navbar
-  bottomNavContainer: {
-    alignItems: "center",
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "90%",
-    backgroundColor: "#2d6eefff",
-    borderRadius: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  navItem: { alignItems: "center" },
-  navLabel: { fontSize: 12, color: "#fff" },
+  actionBtn: { paddingHorizontal: 10, paddingVertical: 5 },
+  uploadText: { color: "#007BFF", fontWeight: "bold" },
+  openText: { color: "#28A745", fontWeight: "bold" },
+  deleteText: { color: "#DC3545", fontWeight: "bold" },
 });

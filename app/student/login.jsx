@@ -194,6 +194,7 @@
 //   },
 // });
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ add
 import { useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useState } from "react";
@@ -206,7 +207,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";  // ✅ add
 import { db } from "../../firebase";
 
 export default function Login() {
