@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 // import React from "react";
 // import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 // import Ionicons from "react-native-vector-icons/Ionicons";
@@ -204,8 +205,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./components/BottomNavbar"; 
-
+import BottomNavbar from "./components/BottomNavbar";
 export default function FacultyHomePage() {
   const router = useRouter();
 
@@ -246,7 +246,7 @@ export default function FacultyHomePage() {
               </View>
             </View>
             <Text style={styles.postText}>
-              I'm thrilled to announce that I've successfully completed not one, but two internships this summer...
+              I&apos;m thrilled to announce that I&apos;ve successfully completed not one, but two internships this summer...
             </Text>
             <Image
               source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
