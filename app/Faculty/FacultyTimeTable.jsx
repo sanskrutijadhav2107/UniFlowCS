@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./Components/BottomNavbar"; 
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function Timetable() {
   const router = useRouter();
@@ -41,14 +41,7 @@ export default function Timetable() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Uniflow-CS</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      
 
       {/* Days Row (Horizontal Scroll) */}
       <ScrollView
@@ -102,16 +95,6 @@ export default function Timetable() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#146ED7",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
 
   dayRow: {
     flexDirection: "row",

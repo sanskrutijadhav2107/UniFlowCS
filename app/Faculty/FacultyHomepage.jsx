@@ -204,7 +204,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./Components/BottomNavbar";
+import BottomNavbar from "./components/BottomNavbar";
 export default function FacultyHomePage() {
   const router = useRouter();
 
@@ -212,8 +212,7 @@ export default function FacultyHomePage() {
     <View style={styles.container}>
       {/* ✅ Scrollable content */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Title */}
-        <Text style={styles.title}>Uniflow-CS</Text>
+      
 
         {/* Feature Buttons */}
         <View style={styles.buttonGrid}>
@@ -287,12 +286,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0047FF",
-    marginBottom: 20,
-  },
+
 
   buttonGrid: {
     flexDirection: "row",

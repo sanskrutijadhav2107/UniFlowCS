@@ -2,7 +2,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import BottomNavbar from "./Components/BottomNavbar";
+import BottomNavbar from "./components/BottomNavbar";
 
 export default function Leaderboard() {
 

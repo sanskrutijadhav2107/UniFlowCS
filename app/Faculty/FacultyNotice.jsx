@@ -592,7 +592,7 @@ export default function NoticeBoard() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>📢 Admin Notice Board</Text>
+          <Text style={styles.headerTitle}>📢 Faculty Notice Board</Text>
         </View>
 
         {/* Notices List */}

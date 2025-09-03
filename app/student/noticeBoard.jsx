@@ -218,8 +218,8 @@ export default function NoticeBoard() {
           <RefreshControl refreshing={refreshing} onRefresh={fetchNotices} />
         }
       >
-        <Text style={styles.header}>UniFlow CS</Text>
-        <Text style={styles.subHeader}>Announcements</Text>
+        <Text style={styles.header}>Notice Board</Text>
+       
 
         {notices.length === 0 ? (
           <Text style={styles.empty}>No notices available 📭</Text>
@@ -291,13 +291,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
-  subHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#0C2D57",
-    textAlign: "center",
-    marginVertical: 10,
-  },
+  
+
   loader: {
     flex: 1,
     justifyContent: "center",
