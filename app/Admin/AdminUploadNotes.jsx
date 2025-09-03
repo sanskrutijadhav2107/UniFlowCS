@@ -33,18 +33,7 @@ export default function AdminUploadNotes() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() =>
-            selectedSubject ? setSelectedSubject(null) : router.back()
-          }
-        >
-          <Ionicons name="arrow-back-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Uniflow-CS</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      
 
       {/* Show Subjects if none selected */}
       {!selectedSubject ? (
@@ -99,16 +88,6 @@ export default function AdminUploadNotes() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#007BFF",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
 
   // Subject Cards
   subjectList: {

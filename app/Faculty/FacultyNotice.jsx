@@ -456,7 +456,7 @@
 
 
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker"; 
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
