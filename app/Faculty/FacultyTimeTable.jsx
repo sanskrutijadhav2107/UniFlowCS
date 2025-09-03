@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./components/BottomNavbar"; 
+import BottomNavbar from "./Components/BottomNavbar"; 
 
 export default function Timetable() {
   const router = useRouter();
@@ -91,14 +91,14 @@ export default function Timetable() {
   );
 }
 
-function NavIcon({ label, icon, onPress }) {
-  return (
-    <TouchableOpacity style={styles.navItem} onPress={onPress}>
-      <Ionicons name={icon} size={26} color="#fff" />
-      <Text style={styles.navLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
+// function NavIcon({ label, icon, onPress }) {
+//   return (
+//     <TouchableOpacity style={styles.navItem} onPress={onPress}>
+//       <Ionicons name={icon} size={26} color="#fff" />
+//       <Text style={styles.navLabel}>{label}</Text>
+//     </TouchableOpacity>
+//   );
+// }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   subjectCard: {
     backgroundColor: "#EAF2FF",
     padding: 35,
+
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,

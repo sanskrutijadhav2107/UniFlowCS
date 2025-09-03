@@ -1,12 +1,10 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./components/BottomNavbar"; 
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import BottomNavbar from "./Components/BottomNavbar";
 
 export default function Leaderboard() {
-  const router = useRouter();
 
   const topPlayers = [
     { rank: 2, name: "Farhan", points: 40, image: require("../../assets/images/user.png") },
@@ -75,14 +73,7 @@ export default function Leaderboard() {
   );
 }
 
-function NavIcon({ label, icon, onPress }) {
-  return (
-    <TouchableOpacity style={styles.navItem} onPress={onPress}>
-      <Ionicons name={icon} size={26} color="#fff" />
-      <Text style={styles.navLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8faff" },

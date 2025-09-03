@@ -204,7 +204,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import BottomNavbar from "./components/BottomNavbar";
+import BottomNavbar from "./Components/BottomNavbar";
 export default function FacultyHomePage() {
   const router = useRouter();
 

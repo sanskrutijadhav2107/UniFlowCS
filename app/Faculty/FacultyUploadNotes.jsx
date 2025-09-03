@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
-<<<<<<< HEAD
 import {
   addDoc,
   collection,
@@ -9,8 +8,8 @@ import {
   doc,
   getDocs,
   query,
-  updateDoc,
   serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -26,13 +25,11 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { db } from "../../firebase";
+import BottomNavbar from "./Components/BottomNavbar";
 
 // 🔑 Cloudinary Config (if you’re still using Cloudinary)
 const CLOUD_NAME = "dveatasry";
-const UPLOAD_PRESET = "unsigned_preset";
-=======
-import BottomNavbar from "./components/BottomNavbar"; 
->>>>>>> origin/main
+const UPLOAD_PRESET = "unsigned_preset"; 
 
 export default function UploadNotes() {
   const router = useRouter();
@@ -303,11 +300,8 @@ export default function UploadNotes() {
           ))}
         </View>
       )}
-<<<<<<< HEAD
-=======
 
       <BottomNavbar/>
->>>>>>> origin/main
     </View>
   );
 }
@@ -323,18 +317,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-<<<<<<< HEAD
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   subjectList: { padding: 15, paddingBottom: 80 },
-=======
 
   // Subject Cards
-  subjectList: {
-    padding: 15,
-    paddingBottom: 80,
-  },
   
->>>>>>> origin/main
   subjectCard: {
     backgroundColor: "#0056b3",
     borderRadius: 12,
@@ -358,12 +345,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   unitText: { fontSize: 16, fontWeight: "bold", color: "#333" },
-<<<<<<< HEAD
   actionBtn: { paddingHorizontal: 10, paddingVertical: 5 },
   uploadText: { color: "#007BFF", fontWeight: "bold" },
   openText: { color: "#28A745", fontWeight: "bold" },
   deleteText: { color: "#DC3545", fontWeight: "bold" },
-=======
   unitStatus: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 },
   unlocked: { backgroundColor: "#D4F5E4" },
   locked: { backgroundColor: "#FADAD8" },
@@ -371,5 +356,4 @@ const styles = StyleSheet.create({
   unlockedText: { color: "#28A745" },
   lockedText: { color: "#DC3545" },
 
->>>>>>> origin/main
 });
