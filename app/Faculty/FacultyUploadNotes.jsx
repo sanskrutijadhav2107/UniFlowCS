@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function UploadNotes() {
   const router = useRouter();
@@ -88,32 +89,7 @@ export default function UploadNotes() {
         </View>
       )}
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavContainer}>
-        <View style={styles.bottomNav}>
-          <NavIcon
-            label="Home"
-            icon="home-outline"
-            onPress={() => router.push("/Faculty/FacultyHomepage")}
-          />
-          <NavIcon label="Upload Notes" icon="cloud-upload-outline" />
-          <NavIcon
-            label="Ranking"
-            icon="trophy-outline"
-            onPress={() => router.push("/Faculty/FacultyLeaderBoard")}
-          />
-          <NavIcon
-            label="TimeTable"
-            icon="calendar-outline"
-            onPress={() => router.push("/Faculty/FacultyTimeTable")}
-          />
-          <NavIcon
-            label="Profile"
-            icon="person-outline"
-            onPress={() => router.push("/Faculty/FacultyProfile")}
-          />
-        </View>
-      </View>
+      <BottomNavbar/>
     </View>
   );
 }
@@ -145,6 +121,7 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 80,
   },
+  
   subjectCard: {
     backgroundColor: "#0056b3",
     borderRadius: 12,
@@ -195,26 +172,4 @@ const styles = StyleSheet.create({
   unlockedText: { color: "#28A745" },
   lockedText: { color: "#DC3545" },
 
-  // Bottom Navbar
-  bottomNavContainer: {
-    alignItems: "center",
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "90%",
-    backgroundColor: "#2d6eefff",
-    borderRadius: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  navItem: { alignItems: "center" },
-  navLabel: { fontSize: 12, color: "#fff" },
 });

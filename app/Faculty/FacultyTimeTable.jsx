@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import BottomNavbar from "./components/BottomNavbar"; 
 
 export default function Timetable() {
   const router = useRouter();
@@ -83,33 +84,9 @@ export default function Timetable() {
           </View>
         ))}
       </ScrollView>
+      <BottomNavbar/>
 
-      {/* Bottom Nav */}
-      <View style={styles.bottomNavContainer}>
-        <View style={styles.bottomNav}>
-          <NavIcon
-            label="Home"
-            icon="home-outline"
-            onPress={() => router.push("/Faculty/FacultyHomepage")}
-          />
-          <NavIcon
-            label="Upload Notes"
-            icon="cloud-upload-outline"
-            onPress={() => router.push("/Faculty/FacultyUploadNotes")}
-          />
-          <NavIcon
-            label="Ranking"
-            icon="trophy-outline"
-            onPress={() => router.push("/Faculty/FacultyLeaderBoard")}
-          />
-          <NavIcon label="TimeTable" icon="calendar-outline" />
-          <NavIcon
-            label="Profile"
-            icon="person-outline"
-            onPress={() => router.push("Faculty/FacultyProfile")}
-          />
-        </View>
-      </View>
+      
     </View>
   );
 }
@@ -180,21 +157,5 @@ const styles = StyleSheet.create({
   subjectDetail: { fontSize: 17, color: "#333", marginBottom: 4 },
   bold: { fontWeight: "bold" },
 
-  bottomNavContainer: { alignItems: "center", paddingVertical: 10, backgroundColor: "#fff" },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "90%",
-    backgroundColor: "#2d6eefff",
-    borderRadius: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  navItem: { alignItems: "center" },
-  navLabel: { fontSize: 12, color: "#fff" },
+  
 });

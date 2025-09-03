@@ -4,8 +4,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from "rea
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 
-export default function App() {
-  const router = useRouter(); // ✅ Initialize router here
+export default function BottomNavbar() {
+  const router = useRouter(); 
 
   return (
     <View style={styles.container}>
@@ -16,7 +16,7 @@ export default function App() {
     <NavIcon
       label="Home"
       icon="home-outline"
-      onPress={() => router.push("/Faculty/FacultyHomePage")}
+      onPress={() => router.push("/Faculty/FacultyHomepage")}
     />
     <NavIcon
       label="Upload Notes"
@@ -64,7 +64,7 @@ function NavIcon({ label, icon, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { backgroundColor: "#fff" },
   scrollContent: { alignItems: "center", paddingVertical: 20 },
   title: { fontSize: 24, fontWeight: "bold", color: "#0047FF", marginBottom: 20 },
   buttonGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginBottom: 20 },
@@ -99,6 +99,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
+    marginBottom: 25,
+   
   },
   navItem: { alignItems: "center" },
   navLabel: { fontSize: 12, color: "#fff" },
