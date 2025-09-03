@@ -237,13 +237,6 @@ export default function StudentHome() {
         contentContainerStyle={{ paddingBottom: 90 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadStudent} />}
       >
-        {/* Header with logout */}
-        <View style={styles.headerRow}>
-          <Text style={styles.header}>UniFlow CS</Text>
-          <TouchableOpacity onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#2d6eefff" />
-          </TouchableOpacity>
-        </View>
 
         {/* Greeting + GPA */}
         <View style={styles.gpaCard}>
@@ -351,14 +344,7 @@ function FeatureCard({ icon, title, subtitle, onPress }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FBFF" },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    marginVertical: 10,
-  },
-  header: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff" },
+  
   gpaCard: {
     flexDirection: "row",
     alignItems: "center",
