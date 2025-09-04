@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: "bold", color: "#0047FF", marginBottom: 20 },
   buttonGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginBottom: 20 },
   featureButton: {
-    width: 140,
-    height: 80,
+    width: 177,
+    height: 90,
     backgroundColor: "#007BFF",
     borderRadius: 10,
     justifyContent: "center",

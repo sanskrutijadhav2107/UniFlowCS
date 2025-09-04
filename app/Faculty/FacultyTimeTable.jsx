@@ -14,18 +14,30 @@ export default function Timetable() {
     Mon: [
       { name: "DCN", time: "9:00 - 10:00", class: "SY" },
       { name: "OS", time: "10:15 - 11:15", class: "TY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
     ],
     Tue: [
       { name: "Hardware Lab", time: "9:00 - 10:00", class: "FY" },
       { name: "DCN", time: "10:15 - 11:15", class: "SY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
     ],
     Wed: [
       { name: "English", time: "9:00 - 10:00", class: "FY" },
       { name: "Economics", time: "10:15 - 11:15", class: "SY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
     ],
     Thu: [
       { name: "Computer Science", time: "9:00 - 10:00", class: "TY" },
       { name: "Electronics", time: "10:15 - 11:15", class: "SY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
     ],
     Fri: [
       { name: "Statistics", time: "9:00 - 10:00", class: "FY" },
@@ -33,6 +45,8 @@ export default function Timetable() {
     ],
     Sat: [
       { name: "Workshop", time: "9:00 - 11:00", class: "ALL" },
+      { name: "DCN", time: "9:00 - 10:00", class: "SY" },
+      { name: "OS", time: "10:15 - 11:15", class: "TY" },
     ],
   };
 
@@ -49,7 +63,11 @@ export default function Timetable() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Days Row (Horizontal Scroll) */}
+      
+
+      {/* Subjects */}
+      <ScrollView contentContainerStyle={styles.subjectContainer}>
+        {/* Days Row (Horizontal Scroll) */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -68,9 +86,6 @@ export default function Timetable() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {/* Subjects */}
-      <ScrollView contentContainerStyle={styles.subjectContainer}>
         {timetableData[selectedDay]?.map((sub, index) => (
           <View key={index} style={styles.subjectCard}>
             <Text style={styles.subjectName}>{sub.name}</Text>
@@ -82,6 +97,7 @@ export default function Timetable() {
             </Text>
           </View>
         ))}
+        
       </ScrollView>
 
       {/* Bottom Nav */}
@@ -138,7 +154,7 @@ const styles = StyleSheet.create({
 
   dayRow: {
     flexDirection: "row",
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     marginVertical: 15,
   },
   dayCircle: {
