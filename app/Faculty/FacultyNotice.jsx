@@ -592,7 +592,7 @@ export default function NoticeBoard() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>📢 Faculty Notice Board</Text>
+          <Text style={styles.headerTitle}> Faculty Notice Board</Text>
         </View>
 
         {/* Notices List */}
@@ -733,6 +733,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#ddd",
     backgroundColor: "#fff",
+    marginBottom:15,
   },
   input: {
     backgroundColor: "#E6F0FF",
@@ -740,7 +741,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     fontSize: 15,
-    marginBottom: 8,
+    marginBottom: 15,
     borderWidth: 1,
     borderColor: "#146ED7",
   },

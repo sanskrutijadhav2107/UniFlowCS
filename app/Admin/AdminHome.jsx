@@ -300,9 +300,11 @@ export default function AdminHome() {
       
 
         {/* Welcome */}
-        <View style={styles.welcomeBox}>
-          <Text style={styles.welcomeText}>Hi Santosh Sable!</Text>
-        </View>
+        {/* Page Title */}
+              <View style={styles.header}>
+                <Text style={styles.pageTitle}>Hii ! Santosh Sabale</Text>
+                <Text style={styles.subTitle}>Welcome</Text>
+              </View>
 
         {/* Feature Buttons in one row */}
         <View style={styles.featureRow}>
@@ -370,18 +372,31 @@ export default function AdminHome() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-
-  welcomeBox: {
-    backgroundColor: "#fff",
-    margin: 15,
-    padding: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
+  // Header
+  header: {
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
   },
-  welcomeText: { fontSize: 16, fontWeight: "500" },
-
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
   // ✅ Updated for smaller feature cards
   featureRow: {
     flexDirection: "row",
@@ -405,6 +420,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
     padding: 8,
+    marginTop: 10,
   },
   featureText: {
     color: "#fff",

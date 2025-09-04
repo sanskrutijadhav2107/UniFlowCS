@@ -30,7 +30,7 @@ export default function MarksGPA() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Text style={styles.header}>UniFlow CS</Text>
+        <Text style={styles.header}>Academic Dashboard</Text>
 
         {/* GPA Card */}
         <View style={styles.gpaCard}>
@@ -89,7 +89,7 @@ export default function MarksGPA() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#B3D7FF" },
-  header: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginVertical: 10 },
+  header: { fontSize: 22, fontWeight: "bold", color: "#0C2D57", textAlign: "center", marginVertical: 10 },
   gpaCard: {
     flexDirection: "row",
     alignItems: "center",

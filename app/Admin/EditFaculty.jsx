@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     borderColor: "#2d6eefff",
     marginBottom: 15,
   },
-  button: { backgroundColor: "#2d6eefff", paddingVertical: 14, borderRadius: 8, marginTop: 10 },
+  button: { backgroundColor: "#2d6eefff", paddingVertical: 14, borderRadius: 8, marginTop: 10 , marginBottom:300,},
   buttonText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "bold" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

@@ -15,7 +15,11 @@ export default function AdminSubjectMonitor() {
   return (
     <View style={styles.container}>
       {/* Title */}
-      <Text style={styles.title}>Monitor Subject Progress</Text>
+      {/* Page Title */}
+                           <View style={styles.header}>
+                             <Text style={styles.pageTitle}>Subject Progress</Text>
+                             <Text style={styles.subTitle}>Welcome</Text>
+                           </View>
 
       {/* Subject List */}
       <FlatList
@@ -51,12 +55,31 @@ export default function AdminSubjectMonitor() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5", paddingHorizontal: 15 },
-  title: {
-    fontSize: 25,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginVertical: 30,
-    color: "#004AAD",
+  // Header
+  header: {
+   
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
   },
   card: {
     backgroundColor: "#fff",

@@ -226,8 +226,12 @@ export default function UploadNotes() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-     
+      
+     {/* Page Title */}
+          <View style={styles.header}>
+          <Text style={styles.pageTitle}>Upload Notes</Text>
+          <Text style={styles.subTitle}>Welcome</Text>
+          </View>
 
       {/* Subject List */}
       {!selectedSubject ? (
@@ -298,13 +302,37 @@ export default function UploadNotes() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
+  header: {
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   subjectList: { padding: 15, paddingBottom: 80 },
 
   // Subject Cards
   
   subjectCard: {
-    backgroundColor: "#0056b3",
+    backgroundColor: "#007BFF",
     borderRadius: 12,
     paddingVertical: 30,
     alignItems: "center",

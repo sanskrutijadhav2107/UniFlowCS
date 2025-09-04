@@ -290,6 +290,7 @@ const styles = StyleSheet.create({
     color: "#0C2D57",
     textAlign: "center",
     marginTop: 10,
+    marginBottom:10,
   },
   
 

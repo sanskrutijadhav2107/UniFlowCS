@@ -7,6 +7,7 @@ import AdminNavbar from "./components/AdminNavbar";
 export default function AdminUploadNotes() {
   const router = useRouter();
 
+
   // Subjects list
   const subjects = ["DCN", "PP", "OOP", "DT"];
 
@@ -33,7 +34,11 @@ export default function AdminUploadNotes() {
 
   return (
     <View style={styles.container}>
-      
+       {/* Page Title */}
+                                    <View style={styles.header}>
+                                      <Text style={styles.pageTitle}>Upload Notes</Text>
+                                      <Text style={styles.subTitle}>Welcome</Text>
+                                    </View>
 
       {/* Show Subjects if none selected */}
       {!selectedSubject ? (
@@ -88,14 +93,38 @@ export default function AdminUploadNotes() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-
+   // Header
+  header: {
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
   // Subject Cards
   subjectList: {
     padding: 15,
     paddingBottom: 80,
   },
   subjectCard: {
-    backgroundColor: "#0056b3",
+    backgroundColor: "#146ED7",
     borderRadius: 12,
     paddingVertical: 30,
     alignItems: "center",

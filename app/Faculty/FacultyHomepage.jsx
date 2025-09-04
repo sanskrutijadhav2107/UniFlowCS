@@ -212,7 +212,11 @@ export default function FacultyHomePage() {
     <View style={styles.container}>
       {/* ✅ Scrollable content */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-      
+       {/* Page Title */}
+          <View style={styles.header}>
+          <Text style={styles.pageTitle}>Hii ! Shravan</Text>
+          <Text style={styles.subTitle}>Welcome</Text>
+          </View>
 
         {/* Feature Buttons */}
         <View style={styles.buttonGrid}>
@@ -287,7 +291,31 @@ const styles = StyleSheet.create({
   },
 
 
-
+header: {
+    width:"100%",
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
   buttonGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

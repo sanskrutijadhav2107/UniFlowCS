@@ -240,18 +240,23 @@ export default function ManageFaculty() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>UniFlow CS - Manage Faculty</Text>
-        </View>
+         {/* Page Title */}
+                      <View style={styles.header}>
+                        <Text style={styles.pageTitle}>Manage Faculty</Text>
+                        <Text style={styles.subTitle}>Welcome</Text>
+                      </View>
 
         {/* Search Bar */}
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search Faculty"
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View style={styles.searchBarContainer}>
+  <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
+  <TextInput
+    style={styles.searchBar}
+    placeholder="Search Faculty"
+    value={search}
+    onChangeText={setSearch}
+    placeholderTextColor="#888"
+  />
+  </View>
 
         {/* Faculty List */}
         {loading ? (
@@ -318,12 +323,15 @@ export default function ManageFaculty() {
       </ScrollView>
 
       {/* Floating + Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push("/Admin/addFaculty")}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+<TouchableOpacity
+  style={styles.fab}
+  activeOpacity={0.7}
+  onPress={() => router.push({ pathname: "/Admin/addFaculty" })}
+>
+  <Ionicons name="add" size={30} color="#fff" />
+</TouchableOpacity>
+
+
 
       {/* Bottom Navbar */}
       <AdminNavbar />
@@ -333,23 +341,54 @@ export default function ManageFaculty() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
+ 
+  // Header
   header: {
-    backgroundColor: "#B8D8FF",
-    padding: 15,
-    alignItems: "center",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
   },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#004AAD" },
-  searchBar: {
-    backgroundColor: "#fff",
-    marginHorizontal: 15,
-    padding: 10,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginBottom: 10,
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
   },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
+  searchBarContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#fff",
+  marginHorizontal: 15,
+  borderRadius: 25,
+  borderWidth: 1,
+  borderColor: "#ccc",
+  paddingHorizontal: 12,
+  marginBottom: 10,
+  marginTop: 10,
+},
+searchIcon: {
+  marginRight: 8,
+},
+searchBar: {
+  flex: 1,
+  paddingVertical: 8,
+  fontSize: 14,
+  color: "#333",
+},
+
   card: {
     backgroundColor: "#fff",
     padding: 15,
@@ -392,15 +431,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   fab: {
-    position: "absolute",
-    bottom: 80,
-    right: 20,
-    backgroundColor: "#0A4D8C",
-    width: 55,
-    height: 55,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-  },
+  position: "absolute",
+  bottom: 110,
+  right: 10,
+  backgroundColor: "#2d6eefff",
+  width: 55,
+  height: 55,
+  borderRadius: 30,
+  justifyContent: "center",
+  alignItems: "center",
+  elevation: 5,
+},
+
 });

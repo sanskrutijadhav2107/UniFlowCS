@@ -321,10 +321,11 @@ export default function AdminNoticeBoard() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={90}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>📢 Admin Notice Board</Text>
-        </View>
+         {/* Page Title */}
+                              <View style={styles.header}>
+                                <Text style={styles.pageTitle}>Notice Board</Text>
+                                <Text style={styles.subTitle}>Welcome</Text>
+                              </View>
 
         {/* Notices List */}
         <ScrollView
@@ -365,7 +366,7 @@ export default function AdminNoticeBoard() {
 
         {uploading && (
           <View style={{ padding: 10 }}>
-            <ActivityIndicator size="large" color="#0A4D8C" />
+            <ActivityIndicator size="large" color="#2d6eefff" />
             <Text>Uploading Image...</Text>
           </View>
         )}
@@ -374,7 +375,7 @@ export default function AdminNoticeBoard() {
         <View style={styles.inputBar}>
           {/* Attachment Button */}
           <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
-            <Ionicons name="attach" size={22} color="#0A4D8C" />
+            <Ionicons name="attach" size={22} color="#2d6eefff" />
           </TouchableOpacity>
 
           {/* Text Input */}
@@ -407,14 +408,31 @@ export default function AdminNoticeBoard() {
 
 
 const styles = StyleSheet.create({
+  // Header
   header: {
-    backgroundColor: "#B8E6F2",
-    padding: 15,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    paddingTop: 30,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#E3F0FF",
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    
   },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#146ED7",
+  },
+  subTitle: {
+    fontSize: 14,
+    color: "#146ED7",
+    marginTop: 4,
+  },
 
   list: { flex: 1, padding: 10 },
   noticeRow: { flexDirection: "row", marginBottom: 10, alignItems: "flex-end" },
@@ -441,6 +459,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#ddd",
     backgroundColor: "#fff",
+    marginBottom :33,
   },
   input: {
     flex: 1,
@@ -452,7 +471,7 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: "#0A4D8C",
+    backgroundColor: "#2d6eefff",
     padding: 10,
     borderRadius: 50,
     marginLeft: 5,
@@ -462,7 +481,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   downloadButton: {
-    backgroundColor: "#0A4D8C",
+    backgroundColor: "#2d6eefff",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,

@@ -236,7 +236,7 @@ export default function AddFaculty() {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 20, backgroundColor: "#fff", justifyContent: "center" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: "bold", color: "#2d6eefff", textAlign: "center", marginBottom: 50 ,},
   input: {
     backgroundColor: "#E6F0FF",
     padding: 12,
@@ -248,6 +248,6 @@ const styles = StyleSheet.create({
   pickerWrapper: { marginBottom: 20 },
   pickerLabel: { fontSize: 14, fontWeight: "500", marginBottom: 5 },
   picker: { backgroundColor: "#E6F0FF", borderRadius: 8 },
-  button: { backgroundColor: "#2d6eefff", paddingVertical: 14, borderRadius: 8, marginTop: 10 },
-  buttonText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "bold" },
+  button: { backgroundColor: "#2d6eefff", paddingVertical: 14, borderRadius: 8, marginTop: 10 , marginBottom:100},
+  buttonText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "bold",marginBottom:5 },
 });

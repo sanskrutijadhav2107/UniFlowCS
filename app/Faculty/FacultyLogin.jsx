@@ -73,10 +73,6 @@
 
 
 
-
-
-
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -88,13 +84,16 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // ✅ for icons
 import { db } from "../../firebase";
 
 export default function FacultyLogin() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); 
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -141,29 +140,49 @@ export default function FacultyLogin() {
 
   return (
     <View style={styles.container}>
+      {/* Logo moved to top */}
+      <Image 
+        source={require("../../assets/images/uniflowcs.png")} 
+        style={styles.logo} 
+        resizeMode="contain"
+      />
+
       <Text style={styles.title}>Faculty Login</Text>
       <Text style={styles.subtitle}>Welcome back!</Text>
 
-      {/* Phone Number Input */}
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Phone Number"
-        keyboardType="numeric"
-        maxLength={10}
-        placeholderTextColor="#555"
-        value={phone}
-        onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ""))}
-      />
+      {/* Phone Input with Icon */}
+      <View style={styles.inputRow}>
+        <Ionicons name="call-outline" size={20} color="#146ED7" style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Phone Number"
+          keyboardType="numeric"
+          maxLength={10}
+          placeholderTextColor="#555"
+          value={phone}
+          onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ""))}
+        />
+      </View>
 
-      {/* Password Input */}
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        placeholderTextColor="#555"
-        value={password}
-        onChangeText={setPassword}
-      />
+      {/* Password Input with Icon + Eye Toggle */}
+      <View style={styles.inputRow}>
+        <Ionicons name="lock-closed-outline" size={20} color="#146ED7" style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry={!showPassword}
+          placeholderTextColor="#555"
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons
+            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            size={20}
+            color="#146ED7"
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Forgot Password */}
       <TouchableOpacity>
@@ -185,19 +204,36 @@ export default function FacultyLogin() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#fff" },
+  container: { flex: 1, padding: 20, justifyContent: "flex-start", backgroundColor: "#fff" },
+  logo: {
+    width: 120,
+    height: 120,
+    alignSelf: "center",
+    marginTop: 20, // moved logo higher
+    marginBottom: 10,
+  },
   title: { fontSize: 30, fontWeight: "bold", color: "#146ED7", textAlign: "center", marginBottom: 15 },
-  subtitle: { fontSize: 18, textAlign: "center", marginBottom: 60 },
-  input: {
+  subtitle: { fontSize: 18, textAlign: "center", marginBottom: 40 },
+
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#E6F0FF",
-    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#146ED7",
-    marginBottom: 30,
+    marginBottom: 25,
+    paddingHorizontal: 10,
     height: 50,
   },
+  icon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 16, color: "#000" },
+
   forgot: { color: "#146ED7", fontSize: 12, textAlign: "right", marginBottom: 20 },
   loginButton: { backgroundColor: "#146ED7", paddingVertical: 12, borderRadius: 8, marginTop: 20 },
   loginText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "bold" },
 });
+
+
+
+
