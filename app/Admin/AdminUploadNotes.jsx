@@ -1,24 +1,9 @@
-// app/Faculty/FacultyUploadNotes.jsx
+
+
+// app/Admin/AdminUploadNotes.jsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc as firestoreDoc,
-  getDocs,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import {
-  deleteObject,
-  getDownloadURL,
-  ref as storageRef,
-  uploadBytes,
-} from "firebase/storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -31,143 +16,175 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc as firestoreDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+
+import {
+  deleteObject,
+  getDownloadURL,
+  ref as storageRef,
+  uploadBytes,
+} from "firebase/storage";
+
 import { db, storage } from "../../firebase";
-import BottomNavbar from "./components/AdminNavbar";
 
 /**
- * FacultyUploadNotes
- * - Uses AsyncStorage key "faculty" (should contain an object with `.id` and `.name`)
- * - Expects facultyAssignments collection to exist with field subjectId/subjectName
- * - Expects a notes collection used to store metadata of uploaded files
- *
- * IMPORTANT:
- * - On Android with Expo Go you may hit a DocumentPicker limitation — create a dev build or test on a real device.
+ * AdminUploadNotes
+ * - admin stored in AsyncStorage under "admin" (fallback to "faculty")
+ * - fetches facultyAssignments where facultyId == admin.id
+ * - uploads files to Firebase Storage and tracks metadata in Firestore 'notes' collection
  */
 
-export default function FacultyUploadNotes() {
+export default function AdminUploadNotes() {
   const router = useRouter();
-  const [faculty, setFaculty] = useState(null);
-  const [assignedSubjects, setAssignedSubjects] = useState([]); // { subjectId, subjectName, ... }
+  const [admin, setAdmin] = useState(null);
+  const [assignedSubjects, setAssignedSubjects] = useState([]);
+  const [notesData, setNotesData] = useState({}); // subjectId => [unit1..6]
   const [loading, setLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [notesData, setNotesData] = useState({}); // subjectId -> [unit1..unit6] with note objects or null
 
   useEffect(() => {
-    const fetchFacultyAndSubjects = async () => {
-      try {
-        setLoading(true);
-        const stored = await AsyncStorage.getItem("faculty");
-        if (!stored) {
-          Alert.alert("Not logged in", "Please log in as faculty or admin.");
-          router.push("/Faculty/FacultyLogin");
-          return;
-        }
-
-        const facultyData = JSON.parse(stored);
-        // We expect facultyData to contain at least { id: "phoneString", name: "Name" }
-        setFaculty(facultyData);
-
-        // 1) fetch assignments for this faculty
-        const faQuery = query(
-          collection(db, "facultyAssignments"),
-          where("facultyId", "==", facultyData.id)
-        );
-        const faSnap = await getDocs(faQuery);
-        const assignments = faSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setAssignedSubjects(assignments);
-
-        // 2) for each assigned subject load notes (units)
-        const notesState = {};
-        for (const sub of assignments) {
-          const nq = query(collection(db, "notes"), where("subjectId", "==", sub.subjectId));
-          const nsnap = await getDocs(nq);
-
-          // initialize 6 unit slots
-          const unitNotes = Array(6).fill(null);
-
-          nsnap.docs.forEach((nDoc) => {
-            const n = nDoc.data();
-            if (n && typeof n.unit === "number" && n.unit >= 1 && n.unit <= 6) {
-              unitNotes[n.unit - 1] = { id: nDoc.id, ...n };
-            }
-          });
-
-          notesState[sub.subjectId] = unitNotes;
-        }
-
-        setNotesData(notesState);
-      } catch (err) {
-        console.error("fetchFacultyAndSubjects error:", err);
-        Alert.alert("Error", "Could not load subjects or notes. Check network & rules.");
-      } finally {
-        setLoading(false);
+  const fetchFacultyAndSubjects = async () => {
+    try {
+      // read admin from AsyncStorage (try several keys)
+      const storedAdminJson = await AsyncStorage.getItem("admin") 
+        || await AsyncStorage.getItem("faculty") 
+        || await AsyncStorage.getItem("currentUser");
+      const adminObj = storedAdminJson ? JSON.parse(storedAdminJson) : null;
+      if (!adminObj) {
+        Alert.alert("Not logged in", "Please login as admin/faculty.");
+        router.push("/Admin/AdminLogin");
+        return;
       }
-    };
+      console.log("ADMIN OBJ:", adminObj);
+      setAdmin(adminObj);
 
-    fetchFacultyAndSubjects();
-  }, [router]);
+      // build candidate keys (strings) to compare with facultyAssignments.facultyId
+      const adminIdCandidates = [
+        adminObj.id,
+        adminObj.phone,
+        (adminObj.phone || "").toString(),
+        (adminObj.id || "").toString()
+      ].filter(Boolean).map(x => String(x));
 
-  // helper: convert local file uri to blob
+      // Try to query using the most likely candidate first (string)
+      let assignmentsSnap = null;
+      for (const candidate of adminIdCandidates) {
+        const q = query(collection(db, "facultyAssignments"), where("facultyId", "==", candidate));
+        const snap = await getDocs(q);
+        console.log("Query candidate", candidate, "->", snap.size);
+        if (!snap.empty) {
+          assignmentsSnap = snap;
+          break;
+        }
+      }
+
+      // If still null, fetch all assignments and filter locally (safe fallback)
+      let assignmentsDocs = [];
+      if (!assignmentsSnap) {
+        const all = await getDocs(collection(db, "facultyAssignments"));
+        assignmentsDocs = all.docs.map(d => ({ id: d.id, ...d.data() }));
+        // filter locally
+        assignmentsDocs = assignmentsDocs.filter(a => adminIdCandidates.includes(String(a.facultyId)));
+      } else {
+        assignmentsDocs = assignmentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+
+      console.log("ASSIGNMENTS FOUND:", assignmentsDocs);
+      setAssignedSubjects(assignmentsDocs);
+
+      // load notes for each assignment (same as before)...
+      const notesState = {};
+      for (const sub of assignmentsDocs) {
+        const nq = query(collection(db, "notes"), where("subjectId", "==", sub.subjectId));
+        const nsnap = await getDocs(nq);
+        const unitNotes = Array(6).fill(null);
+        nsnap.docs.forEach((d) => {
+          const nd = d.data();
+          if (nd && typeof nd.unit === "number") unitNotes[nd.unit - 1] = { id: d.id, ...nd };
+        });
+        notesState[sub.subjectId] = unitNotes;
+      }
+      setNotesData(notesState);
+    } catch (err) {
+      console.error("fetchFacultyAndSubjects error:", err);
+      Alert.alert("Error", "Could not load subjects. Check network & rules.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchFacultyAndSubjects();
+}, [router]);
+  // helper: convert uri to blob (works in RN)
   const uriToBlob = async (uri) => {
-    const resp = await fetch(uri);
-    const blob = await resp.blob();
+    const response = await fetch(uri);
+    const blob = await response.blob();
     return blob;
   };
 
-  // DocumentPicker shape normalization
+  // helper: normalize DocumentPicker result to { uri, name }
   const extractPickedFile = (res) => {
-    // shape returned by some expo versions: { type: "success", uri, name, size }
-    if (res?.type === "success" && res.uri) {
+    if (!res) return null;
+    if (res.type === "success" && res.uri) {
       return { uri: res.uri, name: res.name || "file" };
     }
-    // shape: { assets: [{ uri, name, size, mimeType }], canceled: false }
-    if (Array.isArray(res?.assets) && res.assets.length > 0) {
+    if (Array.isArray(res.assets) && res.assets.length > 0) {
       const a = res.assets[0];
       return { uri: a.uri, name: a.name || "file" };
     }
-    // fallback
-    if (res?.uri) {
+    if (res.uri) {
       return { uri: res.uri, name: res.name || "file" };
     }
     return null;
   };
 
-  // Upload new file for subject/unitIndex
+  // Upload for admin (same logic as faculty)
   const handleUpload = async (subject, unitIndex) => {
     try {
-      const res = await DocumentPicker.getDocumentAsync({ type: "*/*" });
-      console.log("Picker result:", res);
-      const filePicked = extractPickedFile(res);
-      if (!filePicked) {
-        Alert.alert("Picker", "No file picked or picker cancelled.");
+      const pickerRes = await DocumentPicker.getDocumentAsync({ type: "*/*" });
+      console.log("Picker result:", pickerRes);
+      const picked = extractPickedFile(pickerRes);
+      if (!picked) {
+        Alert.alert("No file", "No file selected or picker cancelled.");
         return;
       }
-      const { uri, name } = filePicked;
-      if (!uri) throw new Error("No file URI returned by picker.");
+      const { uri, name } = picked;
+      if (!uri) throw new Error("File URI missing");
 
-      // Android/Expo note: sometimes picker fails on Expo Go. Show helpful message if so.
-      // Convert to blob
+      // convert to blob
       const blob = await uriToBlob(uri);
 
-      // storage path
+      // storage path - deterministic folder per subject, unique filename with timestamp
       const safeName = (name || `unit-${unitIndex + 1}`).replace(/\s+/g, "_");
       const path = `notes/${subject.subjectId}/unit-${unitIndex + 1}-${Date.now()}-${safeName}`;
 
-      // upload to firebase storage
+      // upload bytes
       const sRef = storageRef(storage, path);
       await uploadBytes(sRef, blob);
 
+      // get url
       const downloadUrl = await getDownloadURL(sRef);
 
-      // delete old note (storage + firestore) if exists
-      const oldNote = notesData[subject.subjectId]?.[unitIndex];
-      if (oldNote) {
+      // delete old note if exists (remove storage + doc)
+      const old = notesData[subject.subjectId]?.[unitIndex];
+      if (old) {
         try {
-          if (oldNote.storagePath) {
-            const oldRef = storageRef(storage, oldNote.storagePath);
+          if (old.storagePath) {
+            const oldRef = storageRef(storage, old.storagePath);
             await deleteObject(oldRef).catch((e) => console.warn("deleteObject old:", e.message));
           }
-          await deleteDoc(firestoreDoc(db, "notes", oldNote.id)).catch((e) =>
+          await deleteDoc(firestoreDoc(db, "notes", old.id)).catch((e) =>
             console.warn("deleteDoc old:", e.message)
           );
         } catch (cleanupErr) {
@@ -175,20 +192,20 @@ export default function FacultyUploadNotes() {
         }
       }
 
-      // add new metadata doc
+      // add firestore doc
       const docRef = await addDoc(collection(db, "notes"), {
         subjectId: subject.subjectId,
         subjectName: subject.subjectName || "",
         unit: unitIndex + 1,
         fileUrl: downloadUrl,
         storagePath: path,
-        uploadedBy: faculty?.name || "",
-        uploadedById: faculty?.id || faculty?.phone?.toString() || "",
+        uploadedBy: admin?.name || "",
+        uploadedById: admin?.id || admin?.phone || "",
         uploadedAt: serverTimestamp(),
         locked: false,
       });
 
-      // update local state
+      // update state
       setNotesData((prev) => {
         const updated = { ...prev };
         if (!updated[subject.subjectId]) updated[subject.subjectId] = Array(6).fill(null);
@@ -203,30 +220,28 @@ export default function FacultyUploadNotes() {
         return updated;
       });
 
-      Alert.alert("Uploaded", `Unit ${unitIndex + 1} uploaded successfully.`);
+      Alert.alert("Uploaded", `Unit ${unitIndex + 1} uploaded`);
     } catch (err) {
       console.error("Upload error:", err);
-
       if (
         err?.message?.includes("ActivityNotFoundException") ||
         err?.message?.includes("OPEN_DOCUMENT")
       ) {
         Alert.alert(
           "Picker not available",
-          "Expo Go on Android may not support full file picking. To fully test file picking on Android create an Expo dev build or test on a real device."
+          "Expo Go on Android may not support full file picking. Create a dev build or test on a real device."
         );
         return;
       }
-
       Alert.alert("Upload failed", err.message || "Try again");
     }
   };
 
-  // Delete note (storage + firestore)
+  // delete note (storage + firestore)
   const handleDelete = async (subject, unitIndex) => {
     try {
       const note = notesData[subject.subjectId]?.[unitIndex];
-      if (!note) return Alert.alert("No note", "Nothing to delete for this unit.");
+      if (!note) return Alert.alert("No note", "Nothing to delete");
 
       if (note.storagePath) {
         const sRef = storageRef(storage, note.storagePath);
@@ -234,24 +249,25 @@ export default function FacultyUploadNotes() {
       }
 
       await deleteDoc(firestoreDoc(db, "notes", note.id));
+
       setNotesData((prev) => {
         const updated = { ...prev };
         updated[subject.subjectId][unitIndex] = null;
         return updated;
       });
 
-      Alert.alert("Deleted", `Unit ${unitIndex + 1} deleted.`);
+      Alert.alert("Deleted", `Unit ${unitIndex + 1} deleted`);
     } catch (err) {
       console.error("Delete error:", err);
-      Alert.alert("Delete failed", err.message || "Could not delete note");
+      Alert.alert("Delete failed", err.message || "Could not delete");
     }
   };
 
-  // Toggle lock/unlock
+  // toggle lock/unlock
   const toggleLock = async (subject, unitIndex) => {
     try {
       const note = notesData[subject.subjectId]?.[unitIndex];
-      if (!note) return Alert.alert("No note", "Upload a note before locking/unlocking.");
+      if (!note) return Alert.alert("No note", "Upload note first");
 
       const noteRef = firestoreDoc(db, "notes", note.id);
       const newLocked = !note.locked;
@@ -286,11 +302,10 @@ export default function FacultyUploadNotes() {
         <TouchableOpacity onPress={() => (selectedSubject ? setSelectedSubject(null) : router.back())}>
           <Ionicons name="arrow-back-outline" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upload Notes</Text>
+        <Text style={styles.headerTitle}>Admin Upload Notes</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      {/* subject list */}
       {!selectedSubject ? (
         <ScrollView contentContainerStyle={styles.subjectList}>
           {assignedSubjects.length === 0 ? (
@@ -332,8 +347,6 @@ export default function FacultyUploadNotes() {
           ))}
         </View>
       )}
-
-      <BottomNavbar />
     </View>
   );
 }
@@ -348,19 +361,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
   },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   subjectList: { padding: 15, paddingBottom: 80 },
   subjectCard: {
     backgroundColor: "#0056b3",
     borderRadius: 12,
-    paddingVertical: 30,
+    paddingVertical: 24,
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 12,
     elevation: 4,
   },
-  subjectCardText: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  subjectCardText: { fontSize: 18, fontWeight: "700", color: "#fff" },
 
   unitsContainer: { flex: 1, padding: 15 },
   unitRow: {
@@ -375,9 +389,9 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     elevation: 3,
   },
-  unitText: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  unitText: { fontSize: 16, fontWeight: "700", color: "#333" },
   actionBtn: { paddingHorizontal: 10, paddingVertical: 5 },
-  uploadText: { color: "#007BFF", fontWeight: "bold" },
-  openText: { color: "#28A745", fontWeight: "bold" },
-  deleteText: { color: "#DC3545", fontWeight: "bold" },
+  uploadText: { color: "#007BFF", fontWeight: "700" },
+  openText: { color: "#28A745", fontWeight: "700" },
+  deleteText: { color: "#DC3545", fontWeight: "700" },
 });

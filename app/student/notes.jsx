@@ -1,4 +1,7 @@
+
+// app/Student/StudentNotesPage.jsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -13,29 +16,46 @@ import {
 } from "react-native";
 import { db } from "../../firebase";
 
+const MAX_UNITS = 6; // adjust if your subjects have different unit counts
+
 export default function StudentNotesPage() {
+  const router = useRouter();
   const [student, setStudent] = useState(null);
   const [subjectsWithNotes, setSubjectsWithNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNotes = async () => {
+    const fetchNotesForStudent = async () => {
       try {
-        // 1️⃣ Get student data from AsyncStorage
+        setLoading(true);
+
+        // 1) Load student from AsyncStorage
         const stored = await AsyncStorage.getItem("student");
-        let studentData;
         if (!stored) {
-          // Mock student (testing only)
-          studentData = { semester: 5, name: "Test Student" };
-        } else {
-          studentData = JSON.parse(stored);
+          Alert.alert("Not logged in", "Please log in to view notes.");
+          router.push("/Student/StudentLogin"); // adjust path to your login
+          return;
         }
+
+        const studentData = JSON.parse(stored);
+
+        // Expect studentData.semester to exist
+        const semester = Number(studentData?.semester);
+        if (!semester || Number.isNaN(semester)) {
+          Alert.alert(
+            "Missing data",
+            "Your profile doesn't have a semester set. Please update your student profile."
+          );
+          router.push("/Student/StudentProfile"); // optional: redirect to profile edit
+          return;
+        }
+
         setStudent(studentData);
 
-        // 2️⃣ Get subjects of student's semester
+        // 2) Query subjects collection for this semester (match by doc id being subject code)
         const subjQuery = query(
           collection(db, "subjects"),
-          where("semester", "==", studentData.semester)
+          where("semester", "==", semester)
         );
         const subjSnap = await getDocs(subjQuery);
 
@@ -46,22 +66,28 @@ export default function StudentNotesPage() {
 
         const subjectsList = [];
 
-        // 3️⃣ For each subject, fetch notes by subjectName
+        // 3) For each subject doc fetch notes by subjectId (doc id) and only unlocked notes
         for (const subjDoc of subjSnap.docs) {
           const subject = { id: subjDoc.id, ...subjDoc.data() };
 
-          const notesSnap = await getDocs(
-            query(
-              collection(db, "notes"),
-              where("subjectName", "==", subject.name)
-            )
+          // query notes where subjectId == subjDoc.id and locked == false
+          const notesQuery = query(
+            collection(db, "notes"),
+            where("subjectId", "==", subjDoc.id),
+            where("locked", "==", false)
           );
 
-          const unitNotes = Array(6).fill(null);
-          notesSnap.docs.forEach((n) => {
-            const noteData = n.data();
-            if (noteData.locked === false || noteData.locked === undefined) {
-              unitNotes[noteData.unit - 1] = { id: n.id, ...noteData };
+          const notesSnap = await getDocs(notesQuery);
+
+          // fill unit slots
+          const unitNotes = Array(MAX_UNITS).fill(null);
+
+          notesSnap.docs.forEach((nDoc) => {
+            const n = nDoc.data();
+            // validate unit number
+            const u = Number(n.unit);
+            if (!Number.isNaN(u) && u >= 1 && u <= MAX_UNITS) {
+              unitNotes[u - 1] = { id: nDoc.id, ...n };
             }
           });
 
@@ -72,14 +98,14 @@ export default function StudentNotesPage() {
         setSubjectsWithNotes(subjectsList);
       } catch (err) {
         console.error("Error fetching notes:", err);
-        Alert.alert("Error", err.message);
+        Alert.alert("Error", err.message || "Failed to load notes");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNotes();
-  }, []);
+    fetchNotesForStudent();
+  }, [router]);
 
   if (loading) {
     return (
@@ -91,15 +117,17 @@ export default function StudentNotesPage() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>📚 Notes for Semester {student?.semester}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
+      <Text style={styles.header}>📚 Notes — Semester {student?.semester}</Text>
 
       {subjectsWithNotes.length === 0 ? (
         <Text style={styles.emptyText}>No subjects found for your semester.</Text>
       ) : (
         subjectsWithNotes.map((subj) => (
           <View key={subj.id} style={styles.card}>
-            <Text style={styles.subjectTitle}>{subj.name}</Text>
+            <Text style={styles.subjectTitle}>
+              {subj.name} <Text style={{ color: "#777" }}>({subj.id})</Text>
+            </Text>
 
             {subj.notes.map((note, idx) => (
               <View key={idx} style={styles.unitRow}>
@@ -107,13 +135,21 @@ export default function StudentNotesPage() {
 
                 {note ? (
                   <TouchableOpacity
-                    onPress={() => Linking.openURL(note.fileUrl)}
+                    onPress={() => {
+                      if (!note.fileUrl) {
+                        Alert.alert("File missing", "This note does not have a downloadable file.");
+                        return;
+                      }
+                      Linking.openURL(note.fileUrl).catch(() =>
+                        Alert.alert("Open failed", "Could not open the file URL.")
+                      );
+                    }}
                     style={styles.openBtn}
                   >
                     <Text style={styles.openText}>Open</Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text style={styles.lockedText}>Locked 🔒</Text>
+                  <Text style={styles.lockedText}>Not available</Text>
                 )}
               </View>
             ))}
@@ -135,7 +171,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     elevation: 3,
   },
-  subjectTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10, color: "#333" },
+  subjectTitle: { fontSize: 18, fontWeight: "700", marginBottom: 10, color: "#333" },
   unitRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -145,8 +181,8 @@ const styles = StyleSheet.create({
     borderColor: "#eee",
   },
   unitText: { fontSize: 15, color: "#333" },
-  openBtn: { backgroundColor: "#146ED7", paddingVertical: 5, paddingHorizontal: 12, borderRadius: 6 },
-  openText: { color: "#fff", fontWeight: "bold" },
-  lockedText: { color: "#DC3545", fontWeight: "bold" },
+  openBtn: { backgroundColor: "#146ED7", paddingVertical: 6, paddingHorizontal: 14, borderRadius: 6 },
+  openText: { color: "#fff", fontWeight: "700" },
+  lockedText: { color: "#DC3545", fontWeight: "700" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
