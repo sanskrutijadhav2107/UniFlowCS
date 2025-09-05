@@ -1,3 +1,4 @@
+// app/Faculty/FacultyUploadNotes.jsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
@@ -5,13 +6,19 @@ import {
   addDoc,
   collection,
   deleteDoc,
-  doc,
+  doc as firestoreDoc,
   getDocs,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
+import {
+  deleteObject,
+  getDownloadURL,
+  ref as storageRef,
+  uploadBytes,
+} from "firebase/storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,71 +31,64 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { db } from "../../firebase";
-import BottomNavbar from "./components/BottomNavbar";
+import { db, storage } from "../../firebase";
 
-// 🔑 Cloudinary Config (if you’re still using Cloudinary)
-const CLOUD_NAME = "dveatasry";
-const UPLOAD_PRESET = "unsigned_preset"; 
+/**
+ * FacultyUploadNotes - robust uploader that handles different DocumentPicker shapes.
+ * - stores files in Firebase Storage under notes/<subjectId>/...
+ * - stores a Firestore doc in collection 'notes' with storagePath & fileUrl
+ * - deletes previous unit's file+doc before adding new (avoid duplicates)
+ * - implements lock/unlock toggle (updates notes doc.locked)
+ */
 
-export default function UploadNotes() {
+export default function FacultyUploadNotes() {
   const router = useRouter();
   const [faculty, setFaculty] = useState(null);
   const [assignedSubjects, setAssignedSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [notesData, setNotesData] = useState({}); // subjectId → array of notes (per unit)
+  const [notesData, setNotesData] = useState({}); // subjectId -> array(6) of notes
 
-  // Load faculty + subjects
   useEffect(() => {
     const fetchFacultyAndSubjects = async () => {
       try {
         const stored = await AsyncStorage.getItem("faculty");
         if (!stored) {
-          Alert.alert("Error", "No faculty logged in");
+          Alert.alert("Not logged in", "Please login as faculty.");
           router.push("/Faculty/FacultyLogin");
           return;
         }
-
         const facultyData = JSON.parse(stored);
         setFaculty(facultyData);
 
-        // Get assigned subjects
-        const q = query(
+        // fetch assignments
+        const faQuery = query(
           collection(db, "facultyAssignments"),
           where("facultyId", "==", facultyData.id)
         );
-        const snap = await getDocs(q);
+        const faSnap = await getDocs(faQuery);
+        const assignments = faSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setAssignedSubjects(assignments);
 
-        if (snap.empty) {
-          setAssignedSubjects([]);
-        } else {
-          const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-          setAssignedSubjects(list);
-
-          // Load notes for each subject
-          const notesState = {};
-          for (const sub of list) {
-            const nq = query(
-              collection(db, "notes"),
-              where("subjectId", "==", sub.subjectId)
-            );
-            const nsnap = await getDocs(nq);
-
-            const unitNotes = Array(6).fill(null); // 6 units
-            nsnap.docs.forEach((d) => {
-              const nd = d.data();
-              unitNotes[nd.unit - 1] = { id: d.id, ...nd };
-            });
-
-            notesState[sub.subjectId] = unitNotes;
-          }
-          setNotesData(notesState);
+        // load notes for each assigned subject
+        const notesState = {};
+        for (const sub of assignments) {
+          const nq = query(collection(db, "notes"), where("subjectId", "==", sub.subjectId));
+          const nsnap = await getDocs(nq);
+          const unitNotes = Array(6).fill(null);
+          nsnap.docs.forEach((nDoc) => {
+            const n = nDoc.data();
+            if (n && typeof n.unit === "number") {
+              unitNotes[n.unit - 1] = { id: nDoc.id, ...n };
+            }
+          });
+          notesState[sub.subjectId] = unitNotes;
         }
-      } catch (error) {
-        console.error("Error loading faculty/subjects:", error);
-        Alert.alert("Error", "Could not load faculty subjects");
+        setNotesData(notesState);
+      } catch (err) {
+        console.error("fetchFacultyAndSubjects error:", err);
+        Alert.alert("Error", "Could not load subjects. Check network & rules.");
       } finally {
         setLoading(false);
       }
@@ -97,121 +97,163 @@ export default function UploadNotes() {
     fetchFacultyAndSubjects();
   }, [router]);
 
-  // Upload new note
+  // helper: uri -> blob (works on Android/iOS)
+  const uriToBlob = async (uri) => {
+    const resp = await fetch(uri);
+    const blob = await resp.blob();
+    return blob;
+  };
+
+  // safe extractor for DocumentPicker result
+  const extractPickedFile = (res) => {
+    // shape 1: { type: "success", uri, name, size }
+    if (res?.type === "success" && res.uri) {
+      return { uri: res.uri, name: res.name || "file" };
+    }
+    // shape 2: { assets: [{ uri, name, size, mimeType }], canceled: false }
+    if (Array.isArray(res?.assets) && res.assets.length > 0) {
+      const a = res.assets[0];
+      return { uri: a.uri, name: a.name || "file" };
+    }
+    // shape 3: older shape
+    if (res?.uri) {
+      return { uri: res.uri, name: res.name || "file" };
+    }
+    return null;
+  };
+
+  // Upload file, replace existing unit note if any
   const handleUpload = async (subject, unitIndex) => {
     try {
-      const res = await DocumentPicker.getDocumentAsync({ type: "/" });
-      if (res.canceled) return;
-      const file = res.assets[0];
+      const res = await DocumentPicker.getDocumentAsync({ type: "*/*" });
+      console.log("Picker result:", res);
+      const filePicked = extractPickedFile(res);
+      if (!filePicked) {
+        Alert.alert("Picker", "No file picked or picker cancelled.");
+        return;
+      }
+      const { uri, name } = filePicked;
+      if (!uri) throw new Error("No file URI returned by picker.");
 
-      // Upload to Cloudinary
-      const formData = new FormData();
-      formData.append("file", {
-        uri: file.uri,
-        type: file.mimeType || "application/pdf",
-        name: file.name || `unit-${unitIndex + 1}.pdf`,
-      });
-      formData.append("upload_preset", UPLOAD_PRESET);
+      // convert to blob
+      const blob = await uriToBlob(uri);
 
-      const cloudRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-      const data = await cloudRes.json();
-      if (!data.secure_url) throw new Error("Cloudinary upload failed");
+      // build storage path
+      const safeName = (name || `unit-${unitIndex + 1}`).replace(/\s+/g, "_");
+      const path = `notes/${subject.subjectId}/unit-${unitIndex + 1}-${Date.now()}-${safeName}`;
 
-      const fileUrl = data.secure_url;
+      console.log("Uploading to storage path:", path);
 
-      // Delete old note if exists
-      const oldNote = notesData[subject.subjectId][unitIndex];
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, blob);
+
+      const downloadUrl = await getDownloadURL(sRef);
+      console.log("Upload succeeded. downloadUrl:", downloadUrl);
+
+      // delete old note (storage + doc) if present
+      const oldNote = notesData[subject.subjectId]?.[unitIndex];
       if (oldNote) {
-        await deleteDoc(doc(db, "notes", oldNote.id));
+        try {
+          if (oldNote.storagePath) {
+            const oldRef = storageRef(storage, oldNote.storagePath);
+            await deleteObject(oldRef).catch((e) => console.warn("deleteObject old:", e.message));
+          }
+          await deleteDoc(firestoreDoc(db, "notes", oldNote.id)).catch((e) =>
+            console.warn("deleteDoc old:", e.message)
+          );
+        } catch (cleanupErr) {
+          console.warn("Cleanup error:", cleanupErr);
+        }
       }
 
-      // Add new note
+      // add new doc
       const docRef = await addDoc(collection(db, "notes"), {
         subjectId: subject.subjectId,
-        subjectName: subject.subjectName,
+        subjectName: subject.subjectName || "",
         unit: unitIndex + 1,
-        fileUrl,
-        uploadedBy: faculty?.name,
+        fileUrl: downloadUrl,
+        storagePath: path,
+        uploadedBy: faculty?.name || "",
+        uploadedById: faculty?.id || "",
         uploadedAt: serverTimestamp(),
-        locked: false, // ✅ Default unlocked
+        locked: false,
       });
 
-      // Update local state
+      // update local state
       setNotesData((prev) => {
         const updated = { ...prev };
+        if (!updated[subject.subjectId]) updated[subject.subjectId] = Array(6).fill(null);
         updated[subject.subjectId][unitIndex] = {
           id: docRef.id,
           subjectId: subject.subjectId,
           unit: unitIndex + 1,
-          fileUrl,
+          fileUrl: downloadUrl,
+          storagePath: path,
           locked: false,
         };
         return updated;
       });
 
-      Alert.alert("✅ Success", `Unit ${unitIndex + 1} notes uploaded!`);
+      Alert.alert("Uploaded", `Unit ${unitIndex + 1} uploaded successfully.`);
     } catch (err) {
       console.error("Upload error:", err);
-      Alert.alert("❌ Error", err.message || "Failed to upload notes");
+
+      // common Android expo-document-picker limitation
+      if (err?.message?.includes("ActivityNotFoundException") || err?.message?.includes("OPEN_DOCUMENT")) {
+        Alert.alert(
+          "Picker not available",
+          "Expo Go on Android may not support full file picking. To fully test file picking on Android create an Expo dev build or test on a real device outside Expo Go."
+        );
+        return;
+      }
+
+      Alert.alert("Upload failed", err.message || "Try again");
     }
   };
 
-  // Delete note
+  // Delete note (storage + firestore)
   const handleDelete = async (subject, unitIndex) => {
     try {
-      const note = notesData[subject.subjectId][unitIndex];
-      if (!note) return;
+      const note = notesData[subject.subjectId]?.[unitIndex];
+      if (!note) return Alert.alert("No note", "Nothing to delete");
 
-      await deleteDoc(doc(db, "notes", note.id));
-
-      // Update state
+      if (note.storagePath) {
+        const sRef = storageRef(storage, note.storagePath);
+        await deleteObject(sRef).catch((e) => console.warn("deleteObject:", e.message));
+      }
+      await deleteDoc(firestoreDoc(db, "notes", note.id));
       setNotesData((prev) => {
         const updated = { ...prev };
         updated[subject.subjectId][unitIndex] = null;
         return updated;
       });
-
-      Alert.alert("🗑 Deleted", `Unit ${unitIndex + 1} notes removed`);
+      Alert.alert("Deleted", `Unit ${unitIndex + 1} deleted`);
     } catch (err) {
       console.error("Delete error:", err);
-      Alert.alert("❌ Error", "Could not delete note");
+      Alert.alert("Delete failed", err.message || "Could not delete");
     }
   };
 
-  // Lock/Unlock note
+  // Toggle lock/unlock
   const toggleLock = async (subject, unitIndex) => {
     try {
-      const note = notesData[subject.subjectId][unitIndex];
-      if (!note) return;
+      const note = notesData[subject.subjectId]?.[unitIndex];
+      if (!note) return Alert.alert("No note", "Upload note first");
 
-      const noteRef = doc(db, "notes", note.id);
+      const noteRef = firestoreDoc(db, "notes", note.id);
       const newLocked = !note.locked;
-
       await updateDoc(noteRef, { locked: newLocked });
 
-      // Update state
       setNotesData((prev) => {
         const updated = { ...prev };
-        updated[subject.subjectId][unitIndex] = {
-          ...note,
-          locked: newLocked,
-        };
+        updated[subject.subjectId][unitIndex] = { ...note, locked: newLocked };
         return updated;
       });
 
-      Alert.alert(
-        "🔒 Status Changed",
-        `Unit ${unitIndex + 1} is now ${newLocked ? "Locked" : "Unlocked"}`
-      );
+      Alert.alert("Status updated", `Unit ${unitIndex + 1} is now ${newLocked ? "Locked" : "Unlocked"}`);
     } catch (err) {
-      console.error("Lock toggle error:", err);
-      Alert.alert("❌ Error", "Could not change lock status");
+      console.error("toggleLock error:", err);
+      Alert.alert("Could not change lock", err.message || "Try again");
     }
   };
 
@@ -226,67 +268,50 @@ export default function UploadNotes() {
 
   return (
     <View style={styles.container}>
-      
-     {/* Page Title */}
-          <View style={styles.header}>
-          <Text style={styles.pageTitle}>Upload Notes</Text>
-          <Text style={styles.subTitle}>Welcome</Text>
-          </View>
+      {/* header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => (selectedSubject ? setSelectedSubject(null) : router.back())}>
+          <Ionicons name="arrow-back-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Upload Notes</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      {/* Subject List */}
+      {/* subject list */}
       {!selectedSubject ? (
         <ScrollView contentContainerStyle={styles.subjectList}>
           {assignedSubjects.length === 0 ? (
-            <Text style={{ textAlign: "center", marginTop: 20, color: "#555" }}>
-              No subjects assigned 📚
-            </Text>
+            <Text style={{ textAlign: "center", marginTop: 20 }}>No subjects assigned 📚</Text>
           ) : (
-            assignedSubjects.map((sub) => (
-              <TouchableOpacity
-                key={sub.subjectId}
-                style={styles.subjectCard}
-                onPress={() => setSelectedSubject(sub)}
-              >
-                <Text style={styles.subjectCardText}>{sub.subjectName}</Text>
+            assignedSubjects.map((s) => (
+              <TouchableOpacity key={s.subjectId} style={styles.subjectCard} onPress={() => setSelectedSubject(s)}>
+                <Text style={styles.subjectCardText}>{s.subjectName}</Text>
               </TouchableOpacity>
             ))
           )}
         </ScrollView>
       ) : (
-        // Unit Upload Section
         <View style={styles.unitsContainer}>
-          {notesData[selectedSubject.subjectId]?.map((note, idx) => (
+          {(notesData[selectedSubject.subjectId] || Array(6).fill(null)).map((note, idx) => (
             <View key={idx} style={styles.unitRow}>
               <Text style={styles.unitText}>Unit {idx + 1}</Text>
 
               {note ? (
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(note.fileUrl)}
-                    style={styles.actionBtn}
-                  >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TouchableOpacity onPress={() => Linking.openURL(note.fileUrl)} style={styles.actionBtn}>
                     <Text style={styles.openText}>Open</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => toggleLock(selectedSubject, idx)}
-                    style={styles.actionBtn}
-                  >
-                    <Text style={{ color: note.locked ? "#DC3545" : "#28A745" }}>
-                      {note.locked ? "Unlock" : "Lock"}
-                    </Text>
+
+                  <TouchableOpacity onPress={() => toggleLock(selectedSubject, idx)} style={styles.actionBtn}>
+                    <Text style={{ color: note.locked ? "#DC3545" : "#28A745" }}>{note.locked ? "Unlock" : "Lock"}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDelete(selectedSubject, idx)}
-                    style={styles.actionBtn}
-                  >
+
+                  <TouchableOpacity onPress={() => handleDelete(selectedSubject, idx)} style={styles.actionBtn}>
                     <Text style={styles.deleteText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  onPress={() => handleUpload(selectedSubject, idx)}
-                  style={styles.actionBtn}
-                >
+                <TouchableOpacity onPress={() => handleUpload(selectedSubject, idx)} style={styles.actionBtn}>
                   <Text style={styles.uploadText}>Upload</Text>
                 </TouchableOpacity>
               )}
@@ -294,8 +319,6 @@ export default function UploadNotes() {
           ))}
         </View>
       )}
-
-      <BottomNavbar/>
     </View>
   );
 }
@@ -303,36 +326,18 @@ export default function UploadNotes() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
   header: {
-    paddingTop: 30,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#E3F0FF",
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-    
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#007BFF",
+    paddingVertical: 12,
+    paddingHorizontal: 15,
   },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#146ED7",
-  },
-  subTitle: {
-    fontSize: 14,
-    color: "#146ED7",
-    marginTop: 4,
-  },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   subjectList: { padding: 15, paddingBottom: 80 },
-
-  // Subject Cards
-  
   subjectCard: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#0056b3",
     borderRadius: 12,
     paddingVertical: 30,
     alignItems: "center",
@@ -358,11 +363,4 @@ const styles = StyleSheet.create({
   uploadText: { color: "#007BFF", fontWeight: "bold" },
   openText: { color: "#28A745", fontWeight: "bold" },
   deleteText: { color: "#DC3545", fontWeight: "bold" },
-  unitStatus: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12 },
-  unlocked: { backgroundColor: "#D4F5E4" },
-  locked: { backgroundColor: "#FADAD8" },
-  statusText: { fontWeight: "bold", fontSize: 12 },
-  unlockedText: { color: "#28A745" },
-  lockedText: { color: "#DC3545" },
-
 });
