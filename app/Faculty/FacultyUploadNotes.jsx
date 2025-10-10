@@ -269,13 +269,13 @@ export default function FacultyUploadNotes() {
   return (
     <View style={styles.container}>
       {/* header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity onPress={() => (selectedSubject ? setSelectedSubject(null) : router.back())}>
           <Ionicons name="arrow-back-outline" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Upload Notes</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </View> */}
 
       {/* subject list */}
       {!selectedSubject ? (

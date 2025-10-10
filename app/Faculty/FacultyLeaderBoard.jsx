@@ -6,6 +6,7 @@ import BottomNavbar from "./components/BottomNavbar";
 
 export default function Leaderboard() {
 
+  
   const topPlayers = [
     { rank: 2, name: "Farhan", points: 40, image: require("../../assets/images/user.png") },
     { rank: 1, name: "Priya", points: 43, image: require("../../assets/images/user.png") },

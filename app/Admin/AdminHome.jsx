@@ -101,6 +101,8 @@ export default function AdminHome() {
             <MaterialCommunityIcons name="bullhorn-outline" size={26} color="#fff" />
             <Text style={styles.featureText}>Send Notice</Text>
           </TouchableOpacity>
+
+          
         </View>
 
         {/* Feed Posts (keeps same layout, shows admin name) */}
