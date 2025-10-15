@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import BottomNavbar from "./components/BottomNavbar";
 
+import UniversalPostComposer from "../../components/ui/UniversalPostsFeed";
 export default function StudentHome() {
   const router = useRouter();
   const [student, setStudent] = useState(null);
