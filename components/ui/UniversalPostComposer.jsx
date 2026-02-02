@@ -289,7 +289,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, doc, updateDoc, increment } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { db, storage } from "../../firebase"; // ✅ from components/ui → root
 
@@ -460,6 +460,13 @@ export default function UniversalPostComposer({
       };
 
       const docRef = await addDoc(collection(db, collectionName), data);
+      
+
+      if (safeUser.uid) {
+  await updateDoc(doc(db, "students", safeUser.uid), {
+    points: increment(10),
+  });
+}
 
       // reset
       setCaption("");

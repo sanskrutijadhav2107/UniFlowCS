@@ -111,14 +111,28 @@ export default function UniversalPostsFeed({
     // Snapshot listener will update items; we just stop the spinner in effect
   };
 
-  const like = async (postId) => {
-    if (!enableLike) return;
-    try {
-      await updateDoc(doc(getFirestore(), collectionName, postId), {
-        likeCount: increment(1),
+  const like = async (post) => {
+  if (!enableLike) return;
+
+  try {
+    // 1. increase like count
+    await updateDoc(doc(db, collectionName, post.id), {
+      likeCount: increment(1),
+    });
+
+    // 2. give points to the post owner (student doc id = post.uid)
+    if (post.uid) {
+      await updateDoc(doc(db, "students", post.uid), {
+        points: increment(2),
       });
-    } catch {}
-  };
+    }
+
+  } catch (e) {
+    console.log("Like error:", e);
+  }
+};
+
+
 
   const defaultRenderer = (post) => {
     const imgUri = post.imageUrl || post.previewUrl || null;
@@ -141,7 +155,7 @@ export default function UniversalPostsFeed({
         {showImage && imgUri ? <Image source={{ uri: imgUri }} style={s.image} /> : null}
 
         <View style={s.actions}>
-          <TouchableOpacity onPress={() => like(post.id)} activeOpacity={0.8}>
+          <TouchableOpacity onPress={() => like(post)} activeOpacity={0.8}>
             <Text>👍 Like ({post.likeCount || 0})</Text>
           </TouchableOpacity>
           <Text>💬 Comment</Text>
