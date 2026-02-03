@@ -1,3 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+
 import React, { useState } from "react";
 import {
   View,
@@ -17,6 +20,18 @@ export default function AddItem() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState(null);
+  const [student, setStudent] = useState(null);
+
+  useEffect(() => {
+  const loadStudent = async () => {
+    const saved = await AsyncStorage.getItem("student");
+    if (saved) {
+      setStudent(JSON.parse(saved));
+    }
+  };
+  loadStudent();
+}, []);
+
 
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -40,27 +55,31 @@ export default function AddItem() {
   };
 
   const handleListItem = async () => {
-    if (!title || !price || !image) {
-      Alert.alert("Fill all fields");
-      return;
-    }
+  if (!title || !price || !image) {
+    Alert.alert("Fill all fields");
+    return;
+  }
 
-    const imageUrl = await uploadImage();
+  // ✅ Get student at the exact moment of listing
+  const saved = await AsyncStorage.getItem("student");
+  const studentData = saved ? JSON.parse(saved) : null;
 
-    await addDoc(collection(db, "marketplace"), {
-      title,
-      price: Number(price),
-      imageUrl,
-      sellerName: "Student",
-      createdAt: serverTimestamp(),
-      isSold: false,
-    });
+  console.log("STUDENT AT LIST TIME:", studentData);
 
-    Alert.alert("Item Listed!");
-    setTitle("");
-    setPrice("");
-    setImage(null);
-  };
+  const imageUrl = await uploadImage();
+
+  await addDoc(collection(db, "marketplace"), {
+    title,
+    price: Number(price),
+    imageUrl,
+    sellerName: studentData?.name || "Student",
+    sellerId: studentData?.prn || "unknown",
+    createdAt: serverTimestamp(),
+    isSold: false,
+  });
+
+  Alert.alert("Item Listed!");
+};
 
   return (
     <View style={styles.container}>
