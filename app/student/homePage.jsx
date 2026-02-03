@@ -156,6 +156,13 @@ export default function StudentHome() {
             subtitle="Build success"
             onPress={() => router.push("/student/projectManagement")}
           />
+          <FeatureCard
+            icon={<MaterialIcons name="store" size={28} color="#2d6eefff" />}
+            title="Marketplace"
+            subtitle="Buy & Sell study items"
+            onPress={() => router.push("/student/marketplace")}
+          />
+                    
         </View>
 
         {/* Post Card */}

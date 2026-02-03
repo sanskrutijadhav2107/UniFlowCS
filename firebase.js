@@ -40,6 +40,7 @@
 
 
 // firebase.js
+import { signInAnonymously } from "firebase/auth";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
@@ -82,4 +83,8 @@ try {
 export { addDoc, auth, collection, onSnapshot, orderBy, query, serverTimestamp };
 
 export const db = getFirestore(app);
-export const storage = getStorage(app);
+export const storage = getStorage(app, "gs://uniflowcs.firebasestorage.app");
+
+
+// 🔥 Required for Firebase Storage to work in Expo
+signInAnonymously(auth).catch(() => {});
