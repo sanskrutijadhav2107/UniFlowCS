@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
+import { useRouter } from "expo-router";
 
 import React, { useState } from "react";
 import {
@@ -17,10 +18,15 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../../firebase";
 
 export default function AddItem() {
+  const router = useRouter();   // 🔥 THIS LINE
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState(null);
   const [student, setStudent] = useState(null);
+  const [contact, setContact] = useState("");
+
+  
+
 
   useEffect(() => {
   const loadStudent = async () => {
@@ -54,17 +60,34 @@ export default function AddItem() {
     return await getDownloadURL(storageRef);
   };
 
-  const handleListItem = async () => {
-  if (!title || !price || !image) {
-    Alert.alert("Fill all fields");
+ const handleListItem = async () => {
+  if (
+    !title.trim() ||
+    !price.trim() ||
+    !contact.trim() ||
+    !image
+  ) {
+    Alert.alert("All fields are compulsory");
     return;
   }
 
-  // ✅ Get student at the exact moment of listing
+  if (isNaN(price) || Number(price) <= 0) {
+    Alert.alert("Enter a valid price");
+    return;
+  }
+
+  // ✅ Contact validation (exactly 10 digits)
+  const phoneRegex = /^[0-9]{10}$/;
+
+  if (!phoneRegex.test(contact.trim())) {
+    Alert.alert("Enter valid 10 digit contact number");
+    return;
+  }
+
+
+
   const saved = await AsyncStorage.getItem("student");
   const studentData = saved ? JSON.parse(saved) : null;
-
-  console.log("STUDENT AT LIST TIME:", studentData);
 
   const imageUrl = await uploadImage();
 
@@ -73,41 +96,56 @@ export default function AddItem() {
     price: Number(price),
     imageUrl,
     sellerName: studentData?.name || "Student",
-    sellerId: studentData?.prn || "unknown",
+    sellerId: studentData?.prn,
+    contactInfo: contact,
     createdAt: serverTimestamp(),
     isSold: false,
   });
 
   Alert.alert("Item Listed!");
+
+router.back(); // 👈 go back to marketplace automatically
+
 };
 
+
   return (
-    <View style={styles.container}>
-      <TextInput
-        placeholder="Item name"
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        placeholder="Price"
-        style={styles.input}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
+  <View style={styles.container}>
+    <TextInput
+      placeholder="Item name"
+      style={styles.input}
+      value={title}
+      onChangeText={setTitle}
+    />
 
-      <TouchableOpacity style={styles.pickBtn} onPress={pickImage}>
-        <Text style={{ color: "#fff" }}>Pick Image</Text>
-      </TouchableOpacity>
+    <TextInput
+      placeholder="Price"
+      style={styles.input}
+      value={price}
+      onChangeText={setPrice}
+      keyboardType="numeric"
+    />
 
-      {image && <Image source={{ uri: image }} style={styles.preview} />}
+    {/* ✅ THIS WAS MISSING FROM UI */}
+    <TextInput
+      placeholder="Contact info (phone / whatsapp / meet location)"
+      style={styles.input}
+      value={contact}
+      onChangeText={setContact}
+    />
 
-      <TouchableOpacity style={styles.listBtn} onPress={handleListItem}>
-        <Text style={{ color: "#fff", fontWeight: "700" }}>List Item</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    <TouchableOpacity style={styles.pickBtn} onPress={pickImage}>
+      <Text style={{ color: "#fff" }}>Pick Image</Text>
+    </TouchableOpacity>
+
+    {image && <Image source={{ uri: image }} style={styles.preview} />}
+
+    <TouchableOpacity style={styles.listBtn} onPress={handleListItem}>
+      <Text style={{ color: "#fff", fontWeight: "700" }}>List Item</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 }
 
 const styles = StyleSheet.create({
