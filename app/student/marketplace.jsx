@@ -149,6 +149,7 @@ export default function Marketplace() {
         <Text style={styles.plus}>＋</Text>
       </TouchableOpacity>
 
+
       <BottomNavbar active="marketplace" />
     </View>
   );
