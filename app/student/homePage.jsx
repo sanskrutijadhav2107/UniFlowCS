@@ -162,6 +162,12 @@ export default function StudentHome() {
             subtitle="Buy & Sell study items"
             onPress={() => router.push("/student/marketplace")}
           />
+          <FeatureCard
+            icon={<MaterialIcons name="store" size={28} color="#2d6eefff" />}
+            title="Grievance"
+            subtitle="Submit complaints"
+            onPress={() => router.push("/student/myGrievances")}
+          />
                     
         </View>
 
