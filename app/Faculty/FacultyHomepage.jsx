@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import BottomNavbar from "./components/BottomNavbar";
+import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
+
 
 export default function FacultyHomePage() {
   const router = useRouter();
@@ -76,35 +78,11 @@ export default function FacultyHomePage() {
           />
         </View>
 
-        {/* Feed Posts (kept as-is) */}
-        {[1, 2, 3].map((item) => (
-          <View key={item} style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <Image
-                source={{ uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
-                style={styles.postAvatar}
-              />
-              <View>
-                <Text style={styles.postName}>{displayName}</Text>
-                <Text style={styles.postSubtitle}>
-                  {faculty?.year ? `${faculty.year}rd Year Diploma Computer Engineering Student` : "3rd Year Diploma Computer Engineering Student"}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.postText}>
-              I&apos;m thrilled to announce that I&apos;ve successfully completed not one, but two internships this summer...
-            </Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
-              style={styles.postImage}
-            />
-            <View style={styles.postActions}>
-              <Text>👍 Like</Text>
-              <Text>💬 Comment</Text>
-              <Text>📤 Share</Text>
-            </View>
-          </View>
-        ))}
+        <UniversalPostsFeed
+  collectionName="posts"
+  maxWidth={1280}
+/>
+
       </ScrollView>
 
       {/* Bottom Navbar */}
@@ -128,9 +106,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   scrollContent: {
-    alignItems: "center",
-    paddingVertical: 20,
-  },
+  paddingVertical: 20,
+},
+
   header: {
     width: "100%",
     paddingTop: 30,

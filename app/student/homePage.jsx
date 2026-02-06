@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import BottomNavbar from "./components/BottomNavbar";
 
-import UniversalPostComposer from "../../components/ui/UniversalPostsFeed";
+import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
 export default function StudentHome() {
   const router = useRouter();
   const [student, setStudent] = useState(null);
@@ -171,35 +171,11 @@ export default function StudentHome() {
                     
         </View>
 
-        {/* Post Card */}
-        <View style={styles.postCard}>
-          <View style={styles.postHeader}>
-            <Image
-              source={{ uri: student?.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
-              style={styles.postAvatar}
-            />
-            <View>
-              <Text style={styles.postName}>{student?.name || "Student"}</Text>
-              <Text style={styles.postSubtitle}>
-                {student?.year ? `${student.year} Year` : ""} Computer Engineering Student
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.postText}>
-            Excited to be part of UniFlow 🚀! Let&apos;s learn and grow together.
-          </Text>
-          <Image
-            source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
-            style={styles.postImage}
-          />
-          <View style={styles.postActions}>
-            <TouchableOpacity onPress={() => setLikes((l) => l + 1)}>
-              <Text>👍 Like ({likes})</Text>
-            </TouchableOpacity>
-            <Text>💬 Comment</Text>
-            <Text>📤 Share</Text>
-          </View>
-        </View>
+        <UniversalPostsFeed
+  collectionName="posts"
+  maxWidth={1280}
+/>
+
 
         {/* Logout quick button */}
         <View style={{ paddingHorizontal: 16, marginTop: 8 }}>

@@ -15,6 +15,8 @@ import {
   View,
 } from "react-native";
 import AdminNavbar from "./components/AdminNavbar";
+import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
+
 
 export default function AdminHome() {
   const router = useRouter();
@@ -105,35 +107,11 @@ export default function AdminHome() {
           
         </View>
 
-        {/* Feed Posts (keeps same layout, shows admin name) */}
-        {[1, 2, 3].map((item) => (
-          <View key={item} style={styles.postCard}>
-            <View style={styles.postHeader}>
-              <Image
-                source={{ uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
-                style={styles.postAvatar}
-              />
-              <View>
-                <Text style={styles.postName}>{displayName}</Text>
-                <Text style={styles.postSubtitle}>
-                  {admin?.role ? `${admin.role} at UniFlowCS` : "Admin"}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.postText}>
-              I&apos;m thrilled to announce progress across our courses — let&apos;s keep improving!
-            </Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/FzYg2dV/certificate-sample.png" }}
-              style={styles.postImage}
-            />
-            <View style={styles.postActions}>
-              <Text>👍 Like</Text>
-              <Text>💬 Comment</Text>
-              <Text>📤 Share</Text>
-            </View>
-          </View>
-        ))}
+        <UniversalPostsFeed
+  collectionName="posts"
+  maxWidth={1280}
+/>
+
       </ScrollView>
 
       {/* Bottom Navbar */}
