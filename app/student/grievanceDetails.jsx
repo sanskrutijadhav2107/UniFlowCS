@@ -3,11 +3,25 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { db } from "../../firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { deleteDoc } from "firebase/firestore";
+
+
 
 export default function GrievanceDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [data, setData] = useState(null);
+  const [student, setStudent] = useState(null);
+
+useEffect(() => {
+  const load = async () => {
+    const saved = await AsyncStorage.getItem("student");
+    if (saved) setStudent(JSON.parse(saved));
+  };
+  load();
+}, []);
+
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "grievances", id), (snap) => {
@@ -44,6 +58,24 @@ export default function GrievanceDetails() {
         </>
       )}
 
+      {data.status === "Resolved" &&
+ data.awaitingStudentConfirmation &&
+ student?.prn === data.studentId && (
+  <TouchableOpacity
+    style={styles.confirmBtn}
+    onPress={async () => {
+      await deleteDoc(doc(db, "grievances", id));
+      Alert.alert("Thank you! Grievance closed.");
+      router.back();
+    }}
+  >
+    <Text style={{ color: "#fff", fontWeight: "bold" }}>
+      Confirm Issue Resolved
+    </Text>
+  </TouchableOpacity>
+)}
+
+
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
         <Text style={{ color: "#fff" }}>Back</Text>
       </TouchableOpacity>
@@ -76,4 +108,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
+  confirmBtn: {
+  marginTop: 20,
+  backgroundColor: "green",
+  padding: 14,
+  borderRadius: 10,
+  alignItems: "center",
+},
+
 });

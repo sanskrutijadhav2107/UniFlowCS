@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import AdminNavbar from "./components/AdminNavbar";
 import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
+import FeatureCard from "../../components/ui/FeatureCard";
+import { MaterialIcons } from "@expo/vector-icons";
 
 
 export default function AdminHome() {
@@ -78,34 +80,36 @@ export default function AdminHome() {
           <Text style={styles.subTitle}>{displaySubtitle}</Text>
         </View>
 
-        {/* Feature Buttons */}
-        <View style={styles.featureRow}>
-          <TouchableOpacity
-            style={styles.featureButton}
-            onPress={() => router.push("/Admin/manageFaculty")}
-          >
-            <Ionicons name="person-circle-outline" size={26} color="#fff" />
-            <Text style={styles.featureText}>Manage Faculty</Text>
-          </TouchableOpacity>
+       <View style={styles.grid}>
+  <FeatureCard
+    icon={<Ionicons name="person-circle-outline" size={28} color="#2d6eefff" />}
+    title="Manage Faculty"
+    subtitle="Add & control faculty"
+    onPress={() => router.push("/Admin/manageFaculty")}
+  />
 
-          <TouchableOpacity
-            style={styles.featureButton}
-            onPress={() => router.push("/Admin/AdminSubjectMonitor")}
-          >
-            <MaterialCommunityIcons name="chart-line" size={26} color="#fff" />
-            <Text style={styles.featureText}>Monitor Progress</Text>
-          </TouchableOpacity>
+  <FeatureCard
+    icon={<MaterialCommunityIcons name="chart-line" size={28} color="#2d6eefff" />}
+    title="Monitor Progress"
+    subtitle="Track academics"
+    onPress={() => router.push("/Admin/AdminSubjectMonitor")}
+  />
 
-          <TouchableOpacity
-            style={styles.featureButton}
-            onPress={() => router.push("/Admin/noticeBoard")}
-          >
-            <MaterialCommunityIcons name="bullhorn-outline" size={26} color="#fff" />
-            <Text style={styles.featureText}>Send Notice</Text>
-          </TouchableOpacity>
+  <FeatureCard
+    icon={<MaterialCommunityIcons name="bullhorn-outline" size={28} color="#2d6eefff" />}
+    title="Send Notice"
+    subtitle="Notify students"
+    onPress={() => router.push("/Admin/noticeBoard")}
+  />
 
-          
-        </View>
+  <FeatureCard
+    icon={<MaterialIcons name="report-problem" size={28} color="#2d6eefff" />}
+    title="Grievances"
+    subtitle="Handle complaints"
+    onPress={() => router.push("/Admin/adminGrievances")}
+  />
+</View>
+
 
         <UniversalPostsFeed
   collectionName="posts"
@@ -148,12 +152,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   // ✅ Updated for smaller feature cards
-  featureRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
+  grid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "space-around",
+  marginVertical: 10,
+},
+
+
   featureButton: {
     flex: 1,
     marginHorizontal: 5,
@@ -206,5 +212,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     marginTop: 10,
   },
+  
 });
 

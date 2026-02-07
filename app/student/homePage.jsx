@@ -17,6 +17,8 @@ import {
   View,
 } from "react-native";
 import BottomNavbar from "./components/BottomNavbar";
+import FeatureCard from "../../components/ui/FeatureCard";
+
 
 import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
 export default function StudentHome() {
@@ -168,7 +170,9 @@ export default function StudentHome() {
             subtitle="Submit complaints"
             onPress={() => router.push("/student/myGrievances")}
           />
-                    
+          
+
+
         </View>
 
         <UniversalPostsFeed
@@ -191,15 +195,7 @@ export default function StudentHome() {
   );
 }
 
-function FeatureCard({ icon, title, subtitle, onPress }) {
-  return (
-    <TouchableOpacity style={styles.featureCard} onPress={onPress}>
-      {icon}
-      <Text style={styles.featureTitle}>{title}</Text>
-      <Text style={styles.featureSubtitle}>{subtitle}</Text>
-    </TouchableOpacity>
-  );
-}
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FBFF" },

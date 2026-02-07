@@ -3,9 +3,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import BottomNavbar from "./components/BottomNavbar";
 import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
+import FeatureCard from "../../components/ui/FeatureCard";
+import { Ionicons } from "@expo/vector-icons";
 
 
 export default function FacultyHomePage() {
@@ -64,19 +65,22 @@ export default function FacultyHomePage() {
           <Text style={styles.subTitle}>{displaySubtitle}</Text>
         </View>
 
-        {/* Feature Buttons */}
-        <View style={styles.buttonGrid}>
-          <FeatureButton
-            onPress={() => router.push("/Faculty/FacultyUploadNotes")}
-            label="Upload Notes"
-            icon="cloud-upload-outline"
-          />
-          <FeatureButton
-            onPress={() => router.push("/Faculty/FacultyNotice")}
-            label="Notice"
-            icon="document-text-outline"
-          />
-        </View>
+        <View style={styles.grid}>
+  <FeatureCard
+    icon={<Ionicons name="cloud-upload-outline" size={28} color="#2d6eefff" />}
+    title="Upload Notes"
+    subtitle="Share study material"
+    onPress={() => router.push("/Faculty/FacultyUploadNotes")}
+  />
+
+  <FeatureCard
+    icon={<Ionicons name="document-text-outline" size={28} color="#2d6eefff" />}
+    title="Notice"
+    subtitle="Inform students"
+    onPress={() => router.push("/Faculty/FacultyNotice")}
+  />
+</View>
+
 
         <UniversalPostsFeed
   collectionName="posts"
@@ -91,14 +95,6 @@ export default function FacultyHomePage() {
   );
 }
 
-function FeatureButton({ label, icon, onPress }) {
-  return (
-    <TouchableOpacity style={styles.featureButton} onPress={onPress}>
-      <Ionicons name={icon} size={28} color="#fff" />
-      <Text style={styles.featureText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -133,43 +129,13 @@ const styles = StyleSheet.create({
     color: "#146ED7",
     marginTop: 4,
   },
-  buttonGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  featureButton: {
-    width: 140,
-    height: 80,
-    backgroundColor: "#007BFF",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    margin: 8,
-    borderWidth: 1,
-    borderColor: "#0056b3",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-  },
-  featureText: { color: "#fff", marginTop: 5, fontWeight: "bold" },
-  postCard: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
-  },
+ grid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "space-around",
+  marginVertical: 10,
+},
+
   postHeader: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
   postAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
   postName: { fontWeight: "bold" },
