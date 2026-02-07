@@ -18,6 +18,9 @@ import {
 } from "react-native";
 import BottomNavbar from "./components/BottomNavbar";
 import FeatureCard from "../../components/ui/FeatureCard";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase";
+
 
 
 import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
@@ -27,6 +30,7 @@ export default function StudentHome() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [likes, setLikes] = useState(0);
+  const [todayThought, setTodayThought] = useState(null);
 
   // Helper: normalize semester/year values to integers when possible
   const parseMaybeInt = (val) => {
@@ -74,6 +78,27 @@ export default function StudentHome() {
     loadStudent();
   }, [loadStudent]);
 
+
+  useEffect(() => {
+  const unsub = onSnapshot(collection(db, "dailyThoughts"), (snap) => {
+    const thoughts = snap.docs.map((d) => d.data());
+
+    if (thoughts.length === 0) return;
+
+    // 🔥 Pick thought based on today's date
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0)) /
+        (1000 * 60 * 60 * 24)
+    );
+
+    const index = dayOfYear % thoughts.length;
+    setTodayThought(thoughts[index]);
+  });
+
+  return () => unsub();
+}, []);
+
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadStudent();
@@ -119,6 +144,19 @@ export default function StudentHome() {
             <Text style={styles.gpaText}>Semester: {student?.semester ?? "—"}</Text>
           </View>
         </View>
+
+        {todayThought && (
+  <View style={styles.thoughtCard}>
+    <Text style={styles.thoughtTitle}>🌞 Daily Motivational Thought</Text>
+    <Text style={styles.thoughtText}>
+      "{todayThought.text}"
+    </Text>
+    <Text style={styles.thoughtAuthor}>
+      — {todayThought.author}
+    </Text>
+  </View>
+)}
+
 
         {/* Feature Grid */}
         <View style={styles.grid}>
@@ -278,4 +316,28 @@ const styles = StyleSheet.create({
     borderColor: "#eee",
   },
   logoutText: { color: "#146ED7", fontWeight: "700" },
+
+  thoughtCard: {
+  backgroundColor: "#fff",
+  marginHorizontal: 12,
+  marginTop: 10,
+  padding: 16,
+  borderRadius: 15,
+  elevation: 3,
+},
+thoughtTitle: {
+  fontWeight: "700",
+  marginBottom: 8,
+  color: "#146ED7",
+},
+thoughtText: {
+  fontSize: 15,
+  fontStyle: "italic",
+},
+thoughtAuthor: {
+  marginTop: 8,
+  textAlign: "right",
+  color: "#555",
+},
+
 });
