@@ -79,6 +79,14 @@ export default function FacultyHomePage() {
     subtitle="Inform students"
     onPress={() => router.push("/Faculty/FacultyNotice")}
   />
+
+  <FeatureCard
+  icon={<Ionicons name="create-outline" size={28} color="#2d6eefff" />}
+  title="Enter Marks"
+  subtitle="Update student marks"
+  onPress={() => router.push("/Faculty/enterMarks")}
+/>
+
 </View>
 
 

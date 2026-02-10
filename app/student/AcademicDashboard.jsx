@@ -1,356 +1,207 @@
-// // app/student/marks-gpa.jsx
-// import React, { useState } from "react";
-// import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Dimensions } from "react-native";
-// import { PieChart } from "react-native-chart-kit";
-// import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-// import BottomNavbar from "./components/BottomNavbar"; 
-
-// export default function MarksGPA() {
-//   const [marks, setMarks] = useState({ AJP: "", DA: "", SET: "", OS: "", ED: "" });
-//   const [gpa, setGpa] = useState(null);
-
-//   const handleCalculateGPA = () => {
-//     const values = Object.values(marks).map((m) => parseFloat(m) || 0);
-//     const total = values.reduce((sum, v) => sum + v, 0);
-//     const avg = total / values.length;
-//     // Convert percentage to GPA (scale 10)
-//     const gpaValue = ((avg / 100) * 10).toFixed(2);
-//     setGpa(gpaValue);
-//   };
-
-//   const chartData = [
-//     { name: "AJP", population: parseFloat(marks.AJP) || 0, color: "#4A90E2", legendFontColor: "#333", legendFontSize: 12 },
-//     { name: "DA", population: parseFloat(marks.DA) || 0, color: "#F5A623", legendFontColor: "#333", legendFontSize: 12 },
-//     { name: "SE & T", population: parseFloat(marks.SET) || 0, color: "#50E3C2", legendFontColor: "#333", legendFontSize: 12 },
-//     { name: "OS", population: parseFloat(marks.OS) || 0, color: "#B8E986", legendFontColor: "#333", legendFontSize: 12 },
-//     { name: "ED", population: parseFloat(marks.ED) || 0, color: "#9013FE", legendFontColor: "#333", legendFontSize: 12 },
-//   ];
-
-//   return (
-//     <View style={styles.container}>
-//       <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
-//         {/* Header */}
-//         <Text style={styles.header}>Academic Dashboard</Text>
-
-//         {/* GPA Card */}
-//         <View style={styles.gpaCard}>
-//           <Ionicons name="person-circle" size={40} color="#0C2D57" style={{ marginRight: 10 }} />
-//           <View style={{ flex: 1 }}>
-//             <View style={styles.progressBar}>
-//               <View style={[styles.progressFill, { width: `${gpa ? (gpa / 10) * 100 : 0}%` }]} />
-//             </View>
-//             <Text style={styles.gpaText}>GPA: {gpa || "0.0"}</Text>
-//           </View>
-//         </View>
-
-//         {/* Input Fields */}
-//         {["AJP", "DA", "SE & T", "OS", "ED"].map((subject) => (
-//           <View key={subject} style={styles.inputRow}>
-//             <Text style={styles.subject}>{subject} :</Text>
-//             <TextInput
-//               style={styles.input}
-//               placeholder="Enter marks"
-//               keyboardType="numeric"
-//               value={marks[subject] || ""}
-//               onChangeText={(text) => setMarks({ ...marks, [subject]: text })}
-//             />
-//           </View>
-//         ))}
-
-//         {/* Calculate Button */}
-//         <TouchableOpacity style={styles.calcButton} onPress={handleCalculateGPA}>
-//           <Text style={styles.calcButtonText}>Calculate GPA</Text>
-//         </TouchableOpacity>
-
-//         {/* Pie Chart */}
-//         <Text style={styles.chartTitle}>MARKS</Text>
-//         <PieChart
-//           data={chartData}
-//           width={Dimensions.get("window").width - 20}
-//           height={220}
-//           chartConfig={{
-//             backgroundColor: "#B3D7FF",
-//             backgroundGradientFrom: "#B3D7FF",
-//             backgroundGradientTo: "#B3D7FF",
-//             color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-//           }}
-//           accessor="population"
-//           backgroundColor="transparent"
-//           paddingLeft="15"
-//           absolute
-//         />
-//       </ScrollView>
-
-//        {/* Bottom Navbar */}
-//                  <BottomNavbar active="home" />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: "#B3D7FF" },
-//   header: { fontSize: 22, fontWeight: "bold", color: "#0C2D57", textAlign: "center", marginVertical: 10 },
-//   gpaCard: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     backgroundColor: "#fff",
-//     marginHorizontal: 15,
-//     padding: 10,
-//     borderRadius: 10,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//     elevation: 3,
-//   },
-//   progressBar: {
-//     height: 8,
-//     backgroundColor: "#E0E0E0",
-//     borderRadius: 5,
-//     overflow: "hidden",
-//     marginBottom: 5,
-//   },
-//   progressFill: { height: "100%", backgroundColor: "#0C2D57" },
-//   gpaText: { fontSize: 14, fontWeight: "bold", color: "#0C2D57" },
-//   inputRow: { flexDirection: "row", alignItems: "center", marginHorizontal: 15, marginTop: 10 },
-//   subject: { flex: 1, fontWeight: "bold", fontSize: 16 },
-//   input: {
-//     backgroundColor: "#fff",
-//     padding: 8,
-//     borderRadius: 8,
-//     width: 120,
-//     textAlign: "center",
-//     shadowColor: "#000",
-//     shadowOpacity: 0.05,
-//     shadowRadius: 3,
-//     elevation: 2,
-//   },
-//   calcButton: {
-//     backgroundColor: "#2d6eefff",
-//     margin: 15,
-//     padding: 12,
-//     borderRadius: 8,
-//     alignItems: "center",
-//   },
-//   calcButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-//   chartTitle: { textAlign: "center", fontWeight: "bold", fontSize: 16, marginTop: 15 },
- 
-
-// });
-
-
-
-
-
-
-// app/student/marks-gpa.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
-  Dimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { PieChart } from "react-native-chart-kit";
-import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "../../firebase";
 import BottomNavbar from "./components/BottomNavbar";
 
-export default function MarksGPA() {
-  const subjects = ["AJP", "DA", "SE&T", "OS", "ED"];
+export default function AcademicDashboard() {
+  const [student, setStudent] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [marksData, setMarksData] = useState([]);
 
-  const [sem1, setSem1] = useState({ AJP: "", DA: "", SET: "", OS: "", ED: "" });
-  const [sem2, setSem2] = useState({ AJP: "", DA: "", SET: "", OS: "", ED: "" });
-  const [sgpa1, setSgpa1] = useState(null);
-  const [sgpa2, setSgpa2] = useState(null);
-  const [gpa, setGpa] = useState(null);
+  useEffect(() => {
+    const load = async () => {
+      const saved = await AsyncStorage.getItem("student");
+      if (saved) setStudent(JSON.parse(saved));
+    };
+    load();
+  }, []);
 
-  const calculateSGPA = (marks) => {
-    const total = Object.values(marks).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
-    const avg = total / 5; // 5 subjects
-    return parseFloat(((avg / 100) * 10).toFixed(2)); // Convert to GPA scale (out of 10)
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "subjects"), (snap) => {
+      const data = snap.docs.map((d) => d.data());
+      setSubjects(data);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!student?.prn) return;
+
+    const q = query(
+      collection(db, "marks"),
+      where("studentId", "==", student.prn)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((d) => d.data());
+      setMarksData(data);
+    });
+
+    return () => unsub();
+  }, [student]);
+
+  const getGradePoint = (marks) => {
+    if (marks > 95) return 10.0;
+    if (marks >= 91) return 9.5;
+    if (marks >= 86) return 9.0;
+    if (marks >= 81) return 8.5;
+    if (marks >= 76) return 8.0;
+    if (marks >= 71) return 7.5;
+    if (marks >= 66) return 7.0;
+    if (marks >= 61) return 6.5;
+    if (marks >= 56) return 6.0;
+    if (marks >= 51) return 5.5;
+    if (marks >= 46) return 5.0;
+    if (marks >= 41) return 4.5;
+    if (marks === 40) return 4.0;
+    return 0.0;
   };
 
-  const handleCalculate = () => {
-    const sem1Sgpa = calculateSGPA(sem1);
-    const sem2Sgpa = calculateSGPA(sem2);
-    const finalGpa = ((sem1Sgpa + sem2Sgpa) / 2).toFixed(2);
-    setSgpa1(sem1Sgpa);
-    setSgpa2(sem2Sgpa);
-    setGpa(finalGpa);
+  const calculateSGPA = (semesterMarks) => {
+    let totalCredits = 0;
+    let weightedPoints = 0;
+
+    semesterMarks.forEach((m) => {
+      const subject = subjects.find((s) => s.code === m.subjectCode);
+      if (!subject) return;
+
+      const credits = Number(subject.credits);
+      const gradePoint = getGradePoint(m.marks);
+
+      weightedPoints += gradePoint * credits;
+      totalCredits += credits;
+    });
+
+    return totalCredits
+      ? {
+          sgpa: (weightedPoints / totalCredits).toFixed(2),
+          credits: totalCredits,
+        }
+      : null;
   };
 
-  const chartData = [
-    {
-      name: "Sem 1 SGPA",
-      population: sgpa1 ? sgpa1 * 10 : 0,
-      color: "#4A90E2",
-      legendFontColor: "#333",
-      legendFontSize: 12,
-    },
-    {
-      name: "Sem 2 SGPA",
-      population: sgpa2 ? sgpa2 * 10 : 0,
-      color: "#F5A623",
-      legendFontColor: "#333",
-      legendFontSize: 12,
-    },
-  ];
+  // Group by semester
+  const semesters = {};
+  marksData.forEach((m) => {
+    if (!semesters[m.semester]) semesters[m.semester] = [];
+    semesters[m.semester].push(m);
+  });
+
+  const semesterNumbers = Object.keys(semesters)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  // Precompute SGPA data
+  const sgpaData = {};
+  semesterNumbers.forEach((sem) => {
+    sgpaData[sem] = calculateSGPA(semesters[sem]);
+  });
+
+  // GPA calculation (odd + even pairing)
+  const yearGPAs = [];
+  for (let i = 0; i < semesterNumbers.length; i++) {
+    const sem = semesterNumbers[i];
+
+    if (sem % 2 !== 0) {
+      const nextSem = sem + 1;
+
+      if (sgpaData[sem] && sgpaData[nextSem]) {
+        const totalWeighted =
+          sgpaData[sem].sgpa * sgpaData[sem].credits +
+          sgpaData[nextSem].sgpa * sgpaData[nextSem].credits;
+
+        const totalCredits =
+          sgpaData[sem].credits + sgpaData[nextSem].credits;
+
+        const gpa = (totalWeighted / totalCredits).toFixed(2);
+
+        yearGPAs.push({
+          year: Math.ceil(sem / 2),
+          sem1: sem,
+          sem2: nextSem,
+          gpa,
+        });
+      }
+    }
+  }
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Header */}
-        <LinearGradient colors={["#fff", "#fff"]} style={styles.header}>
-          <Text style={styles.headerText}>📘 Academic Dashboard</Text>
-        </LinearGradient>
-        
-        {/* GPA Summary */}
-        <View style={styles.gpaCard}>
-          <Ionicons name="school-outline" size={40} color="#2d6eefff" />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={styles.gpaText}>SGPA (Sem 1): {sgpa1 || "0.0"}</Text>
-            <Text style={styles.gpaText}>SGPA (Sem 2): {sgpa2 || "0.0"}</Text>
-            <Text style={styles.finalGpaText}>GPA (Average): {gpa || "0.0"}</Text>
-          </View>
-        </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        <Text style={styles.header}>📘 Academic Dashboard</Text>
 
-        {/* SEMESTER 1 */}
-        <Text style={styles.sectionTitle}>Semester 1 Marks</Text>
-        {subjects.map((subj) => (
-          <View key={subj} style={styles.inputRow}>
-            <Text style={styles.label}>{subj} :</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0-100"
-              keyboardType="numeric"
-              value={sem1[subj]}
-              onChangeText={(text) =>
-                setSem1({ ...sem1, [subj]: text.replace(/[^0-9]/g, "") })
-              }
-            />
+        {semesterNumbers.map((sem) => (
+          <View key={sem} style={styles.card}>
+            <Text style={styles.semTitle}>Semester {sem}</Text>
+            <Text style={styles.sgpa}>
+              SGPA: {sgpaData[sem]?.sgpa}
+            </Text>
           </View>
         ))}
 
-        {/* SEMESTER 2 */}
-        <Text style={styles.sectionTitle}>Semester 2 Marks</Text>
-        {subjects.map((subj) => (
-          <View key={subj} style={styles.inputRow}>
-            <Text style={styles.label}>{subj} :</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0-100"
-              keyboardType="numeric"
-              value={sem2[subj]}
-              onChangeText={(text) =>
-                setSem2({ ...sem2, [subj]: text.replace(/[^0-9]/g, "") })
-              }
-            />
+        {yearGPAs.map((y, i) => (
+          <View key={i} style={styles.gpaCard}>
+            <Text style={styles.gpaTitle}>
+              🎓 Year {y.year} GPA (Sem {y.sem1} & {y.sem2})
+            </Text>
+            <Text style={styles.gpaValue}>{y.gpa}</Text>
           </View>
         ))}
-
-        {/* Calculate Button */}
-        <TouchableOpacity style={styles.calcButton} onPress={handleCalculate}>
-          <LinearGradient colors={["#2d6eefff", "#4A90E2"]} style={styles.gradientButton}>
-            <Ionicons name="calculator-outline" size={22} color="#fff" />
-            <Text style={styles.calcText}>Calculate GPA</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Chart */}
-        {gpa && (
-          <>
-            <Text style={styles.chartTitle}>🎓 SGPA Comparison</Text>
-            <PieChart
-              data={chartData}
-              width={Dimensions.get("window").width - 20}
-              height={220}
-              chartConfig={{
-                backgroundColor: "#E6F0FF",
-                backgroundGradientFrom: "#E6F0FF",
-                backgroundGradientTo: "#E6F0FF",
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              }}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              absolute
-            />
-          </>
-        )}
       </ScrollView>
 
-      <BottomNavbar active="home" />
+      <BottomNavbar active="dashboard" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFF" },
+  container: { flex: 1, backgroundColor: "#F9FBFF", padding: 16 },
   header: {
-    paddingVertical: 18,
-    alignItems: "center",
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
   },
-  headerText: { color: "#2d6eefff", fontSize: 20, fontWeight: "bold" },
-  gpaCard: {
-    flexDirection: "row",
-    alignItems: "center",
+  card: {
     backgroundColor: "#fff",
-    margin: 15,
-    padding: 15,
+    padding: 14,
     borderRadius: 12,
-    elevation: 3,
+    marginBottom: 12,
   },
-  gpaText: { fontSize: 15, fontWeight: "600", color: "#2d6eefff" },
-  finalGpaText: { fontSize: 17, fontWeight: "bold", color: "#0C2D57", marginTop: 5 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0C2D57",
-    marginLeft: 15,
-    marginTop: 10,
+  semTitle: { fontSize: 16, fontWeight: "bold" },
+  sgpa: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#146ED7",
+    marginTop: 6,
   },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 15,
-    marginTop: 8,
-    justifyContent: "space-between",
-  },
-  label: { flex: 1, fontWeight: "bold", fontSize: 15, color: "#333" },
-  input: {
+  gpaCard: {
     backgroundColor: "#E6F0FF",
-    padding: 8,
-    borderRadius: 8,
-    width: 120,
-    textAlign: "center",
-    borderWidth: 1,
-    borderColor: "#2d6eefff",
-  },
-  calcButton: {
-    marginHorizontal: 15,
-    marginVertical: 20,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  gradientButton: {
-    flexDirection: "row",
-    justifyContent: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 10,
     alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 8,
   },
-  calcText: { color: "#fff", fontWeight: "bold", fontSize: 16, marginLeft: 8 },
-  chartTitle: {
-    textAlign: "center",
+  gpaTitle: {
     fontWeight: "bold",
-    fontSize: 16,
-    marginVertical: 15,
+    marginBottom: 6,
     color: "#0C2D57",
+  },
+  gpaValue: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#146ED7",
   },
 });
-
