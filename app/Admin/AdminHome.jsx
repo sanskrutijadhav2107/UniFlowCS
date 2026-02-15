@@ -108,7 +108,15 @@ export default function AdminHome() {
     subtitle="Handle complaints"
     onPress={() => router.push("/Admin/adminGrievances")}
   />
+  <FeatureCard
+    icon={<Ionicons name="briefcase" size={28} color="#2d6eefff" />}
+    title="Post Opportunity"
+    subtitle="Add internship/job"
+    onPress={() => router.push("/Admin/addOpportunity")}
+  />
+
 </View>
+
 
 
         <UniversalPostsFeed

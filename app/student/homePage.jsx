@@ -208,6 +208,12 @@ export default function StudentHome() {
             subtitle="Submit complaints"
             onPress={() => router.push("/student/myGrievances")}
           />
+          <FeatureCard
+            icon={<Ionicons name="briefcase" size={28} color="#2d6eefff" />}
+            title="Placement Hub"
+            subtitle="Internships & Jobs"
+            onPress={() => router.push("/student/placementHub")}
+          />
           
 
 
