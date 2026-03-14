@@ -214,15 +214,20 @@ export default function StudentHome() {
             subtitle="Internships & Jobs"
             onPress={() => router.push("/student/placementHub")}
           />
-          
+          <FeatureCard
+            icon={<Ionicons name="checkmark-done" size={28} color="#2d6eefff" />}
+            title="Weekly Goals"
+            subtitle="Set your targets"
+            onPress={() => router.push("/student/weeklyGoals")}
+          />
 
 
         </View>
 
         <UniversalPostsFeed
-  collectionName="posts"
-  maxWidth={1280}
-/>
+          collectionName="posts"
+          maxWidth={1280}
+        />
 
 
         {/* Logout quick button */}
