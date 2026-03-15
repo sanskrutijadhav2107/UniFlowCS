@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import BottomNavbar from "./components/BottomNavbar";
 import FeatureCard from "../../components/ui/FeatureCard";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 
 
@@ -31,7 +31,10 @@ export default function StudentHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [likes, setLikes] = useState(0);
   const [todayThought, setTodayThought] = useState(null);
+  const [weeklyGoals, setWeeklyGoals] = useState([]);
 
+
+  
   // Helper: normalize semester/year values to integers when possible
   const parseMaybeInt = (val) => {
     if (val == null) return null;
@@ -74,6 +77,17 @@ export default function StudentHome() {
     }
   }, [router]);
 
+  const getWeekNumber = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = now - start;
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    return Math.ceil(diff / oneWeek);
+  };
+
+  const currentWeek = getWeekNumber();
+  const currentYear = new Date().getFullYear();
+
   useEffect(() => {
     loadStudent();
   }, [loadStudent]);
@@ -109,7 +123,23 @@ export default function StudentHome() {
     setStudent(null);
     router.push("/student/login");
   };
+  useEffect(() => {
+    if (!student?.prn) return;
 
+    const q = query(
+      collection(db, "weeklyGoals"),
+      where("studentId", "==", student.prn),
+      where("weekNumber", "==", currentWeek),
+      where("year", "==", currentYear)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((d) => d.data());
+      setWeeklyGoals(data);
+    });
+
+    return () => unsub();
+  }, [student]);
   if (loading) {
     return (
       <View style={styles.loadingWrap}>
@@ -118,6 +148,11 @@ export default function StudentHome() {
       </View>
     );
   }
+
+
+
+  const completed = weeklyGoals.filter(g => g.isCompleted).length;
+  const total = weeklyGoals.length;
 
   return (
     <View style={styles.container}>
@@ -146,17 +181,35 @@ export default function StudentHome() {
         </View>
 
         {todayThought && (
-  <View style={styles.thoughtCard}>
-    <Text style={styles.thoughtTitle}>🌞 Daily Motivational Thought</Text>
-    <Text style={styles.thoughtText}>
-      "{todayThought.text}"
-    </Text>
-    <Text style={styles.thoughtAuthor}>
-      — {todayThought.author}
-    </Text>
-  </View>
-)}
+          <View style={styles.thoughtCard}>
+            <Text style={styles.thoughtTitle}>🌞 Daily Motivational Thought</Text>
+            <Text style={styles.thoughtText}>
+              "{todayThought.text}"
+            </Text>
+            <Text style={styles.thoughtAuthor}>
+              — {todayThought.author}
+            </Text>
+          </View>
 
+        )}
+
+        <View style={styles.boostCard}>
+          <Text style={styles.boostTitle}>🔥 Daily Boost</Text>
+
+          {total === 0 ? (
+            <Text style={styles.boostText}>
+              Set your weekly goals and stay consistent!
+            </Text>
+          ) : completed === total ? (
+            <Text style={styles.boostText}>
+              Amazing! You completed all goals this week 💪
+            </Text>
+          ) : (
+            <Text style={styles.boostText}>
+              You have {total - completed} goals pending this week. Keep going!
+            </Text>
+          )}
+        </View>
 
         {/* Feature Grid */}
         <View style={styles.grid}>
@@ -349,6 +402,23 @@ thoughtAuthor: {
   marginTop: 8,
   textAlign: "right",
   color: "#555",
+},
+
+boostCard: {
+  backgroundColor: "#FFF3CD",
+  padding: 16,
+  borderRadius: 12,
+  marginVertical: 10,
+},
+
+boostTitle: {
+  fontWeight: "bold",
+  fontSize: 16,
+  marginBottom: 5,
+},
+
+boostText: {
+  color: "#444",
 },
 
 });
