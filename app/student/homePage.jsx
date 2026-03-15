@@ -123,6 +123,11 @@ export default function StudentHome() {
     setStudent(null);
     router.push("/student/login");
   };
+
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+
   useEffect(() => {
     if (!student?.prn) return;
 
@@ -132,6 +137,7 @@ export default function StudentHome() {
       where("weekNumber", "==", currentWeek),
       where("year", "==", currentYear)
     );
+
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((d) => d.data());
@@ -153,6 +159,10 @@ export default function StudentHome() {
 
   const completed = weeklyGoals.filter(g => g.isCompleted).length;
   const total = weeklyGoals.length;
+
+  const todaysGoals = weeklyGoals.filter(g => g.targetDay === today);
+  const completedToday = todaysGoals.filter(g => g.isCompleted).length;
+  const totalToday = todaysGoals.length;
 
   return (
     <View style={styles.container}>
@@ -193,20 +203,21 @@ export default function StudentHome() {
 
         )}
 
+
         <View style={styles.boostCard}>
           <Text style={styles.boostTitle}>🔥 Daily Boost</Text>
 
-          {total === 0 ? (
+          {totalToday === 0 ? (
             <Text style={styles.boostText}>
-              Set your weekly goals and stay consistent!
+              No goals scheduled for today. Perfect day to get ahead!
             </Text>
-          ) : completed === total ? (
+          ) : completedToday === totalToday ? (
             <Text style={styles.boostText}>
-              Amazing! You completed all goals this week 💪
+              Awesome! You finished today's goals 🎉
             </Text>
           ) : (
             <Text style={styles.boostText}>
-              You have {total - completed} goals pending this week. Keep going!
+              You have {totalToday - completedToday} goals planned for today. Let's get them done!
             </Text>
           )}
         </View>
