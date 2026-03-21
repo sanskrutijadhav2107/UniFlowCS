@@ -1,26 +1,81 @@
-// app/Admin/AdminProfile.jsx
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Linking,
+  ActivityIndicator,
+} from "react-native";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function AdminProfile() {
   const router = useRouter();
+  const [admin, setAdmin] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // 🔹 Load admin data
+  useEffect(() => {
+    const loadAdmin = async () => {
+      try {
+        const data = await AsyncStorage.getItem("admin");
+
+        if (data) {
+          setAdmin(JSON.parse(data));
+        } else {
+          // fallback (in case you used another key)
+          const alt = await AsyncStorage.getItem("currentUser");
+          if (alt) setAdmin(JSON.parse(alt));
+        }
+      } catch (err) {
+        console.log("Error loading admin:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAdmin();
+  }, []);
+
+  // 🔹 Loading UI
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#146ED7" />
+        <Text>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  // 🔹 Safe values
+  const name = admin?.name || "Admin";
+  const email = admin?.email || "N/A";
+  const education = admin?.education || "Not specified";
+  const phone = admin?.phone || "N/A";
+  const linkedin = admin?.linkedin || null;
 
   const openLinkedIn = () => {
-    Linking.openURL("https://www.linkedin.com/in/admin-linkedin"); // Replace with actual
+    if (linkedin) Linking.openURL(linkedin);
   };
 
   return (
     <View style={styles.container}>
-      {/* Gradient Header */}
+      {/* Header */}
       <LinearGradient colors={["#146ED7", "#4A90E2"]} style={styles.header}>
         <Image
-          source={{ uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
+          source={{
+            uri:
+              admin?.photo ||
+              "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Santosh Sable</Text>
+        <Text style={styles.name}>{name}</Text>
         <Text style={styles.subtitle}>Admin - UniFlow CS</Text>
       </LinearGradient>
 
@@ -28,34 +83,36 @@ export default function AdminProfile() {
       <View style={styles.infoCard}>
         <View style={styles.infoRow}>
           <Ionicons name="person-outline" size={20} color="#146ED7" />
-          <Text style={styles.infoText}>Name: Santosh Sable</Text>
+          <Text style={styles.infoText}>Name: {name}</Text>
         </View>
+
         <View style={styles.infoRow}>
           <Ionicons name="mail-outline" size={20} color="#146ED7" />
-          <Text style={styles.infoText}>Email: admin@uniflowcs.com</Text>
+          <Text style={styles.infoText}>Email: {email}</Text>
         </View>
+
         <View style={styles.infoRow}>
           <Ionicons name="school-outline" size={20} color="#146ED7" />
-          <Text style={styles.infoText}>Education: M.Tech Computer Science</Text>
+          <Text style={styles.infoText}>Education: {education}</Text>
         </View>
+
         <View style={styles.infoRow}>
           <Ionicons name="call-outline" size={20} color="#146ED7" />
-          <Text style={styles.infoText}>Phone: +91 98765 43210</Text>
+          <Text style={styles.infoText}>Phone: {phone}</Text>
         </View>
+
         {/* LinkedIn */}
-        <TouchableOpacity style={styles.infoRow} onPress={openLinkedIn}>
-          <FontAwesome name="linkedin-square" size={22} color="#0A66C2" />
-          <Text
-            style={[styles.infoText, { color: "#0A66C2", textDecorationLine: "underline" }]}
-          >
-            linkedin.com/in/admin-profile
-          </Text>
-        </TouchableOpacity>
+        {linkedin && (
+          <TouchableOpacity style={styles.infoRow} onPress={openLinkedIn}>
+            <FontAwesome name="linkedin-square" size={22} color="#0A66C2" />
+            <Text style={[styles.infoText, styles.link]}>
+              View LinkedIn Profile
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-     
-
-      {/* Logout Button */}
+      {/* Logout */}
       <TouchableOpacity
         style={styles.logoutButton}
         onPress={() => router.replace("/")}
