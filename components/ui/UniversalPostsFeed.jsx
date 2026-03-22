@@ -24,7 +24,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { arrayUnion, arrayRemove } from "firebase/firestore";
 export default function UniversalPostsFeed({
   ListHeaderComponent,
   collectionName = "posts",
@@ -43,6 +44,24 @@ export default function UniversalPostsFeed({
 
   const lastDocRef = useRef(null);
   const unsubRef = useRef(null);
+  const [userId, setUserId] = useState(null);
+
+
+  useEffect(() => {
+  const loadUser = async () => {
+    const data =
+      (await AsyncStorage.getItem("student")) ||
+      (await AsyncStorage.getItem("faculty")) ||
+      (await AsyncStorage.getItem("admin"));
+
+    if (data) {
+      const parsed = JSON.parse(data);
+      setUserId(parsed.prn || parsed.uid || parsed.id);
+    }
+  };
+
+  loadUser();
+}, []);
 
   // 🔥 Correct Firestore listener (NO dependency trap)
   useEffect(() => {
@@ -102,21 +121,49 @@ export default function UniversalPostsFeed({
   const onRefresh = () => setRefreshing(true);
 
   const like = async (post) => {
-    if (!enableLike) return;
+  if (!enableLike || !userId) return;
 
-    await updateDoc(doc(db, collectionName, post.id), {
-      likeCount: increment(1),
-    });
+  const postRef = doc(db, collectionName, post.id);
+  const alreadyLiked = post.likedBy?.includes(userId);
 
-    if (post.uid) {
-      await updateDoc(doc(db, "students", post.uid), {
-        points: increment(2),
+  try {
+    if (alreadyLiked) {
+      // UNLIKE
+      await updateDoc(postRef, {
+        likedBy: arrayRemove(userId),
+        likeCount: increment(-1),
       });
+
+      // 🔻 remove points from post owner
+      if (post.uid) {
+        await updateDoc(doc(db, "students", post.uid), {
+          points: increment(-2),
+        });
+      }
+
+    } else {
+      // LIKE
+      await updateDoc(postRef, {
+        likedBy: arrayUnion(userId),
+        likeCount: increment(1),
+      });
+
+      // 🔺 add points to post owner
+      if (post.uid) {
+        await updateDoc(doc(db, "students", post.uid), {
+          points: increment(2),
+        });
+      }
     }
-  };
+  } catch (e) {
+    console.log("Like error:", e);
+  }
+};
 
   const defaultRenderer = (post) => {
     const imgUri = post.imageUrl || post.previewUrl || null;
+
+    const isLiked = post.likedBy?.includes(userId);
 
     return (
       <View style={s.card}>
@@ -146,10 +193,13 @@ export default function UniversalPostsFeed({
 
         <View style={s.actions}>
           <TouchableOpacity onPress={() => like(post)}>
-            <Text>👍 Like ({post.likeCount || 0})</Text>
+            <Text style={[s.actionText, isLiked && s.liked]}>
+              👍 {isLiked ? "Liked" : "Like"} ({post.likeCount || 0})
+            </Text>
           </TouchableOpacity>
-          <Text>💬 Comment</Text>
-          <Text>📤 Share</Text>
+
+          <Text style={s.actionText}>💬 Comment</Text>
+          <Text style={s.actionText}>📤 Share</Text>
         </View>
       </View>
     );
@@ -223,4 +273,12 @@ const s = StyleSheet.create({
     justifyContent: "space-around",
     marginTop: 10,
   },
+  actionText: {
+  fontWeight: "600",
+  color: "#555",
+},
+
+liked: {
+  color: "#1877F2",
+},
 });
