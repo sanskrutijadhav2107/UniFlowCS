@@ -23,6 +23,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import CommentsModal from "./CommentsModal";
 import { db } from "../../firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { arrayUnion, arrayRemove } from "firebase/firestore";
@@ -46,6 +47,9 @@ export default function UniversalPostsFeed({
   const unsubRef = useRef(null);
   const [userId, setUserId] = useState(null);
 
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showComments, setShowComments] = useState(false);
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
   const loadUser = async () => {
@@ -57,6 +61,7 @@ export default function UniversalPostsFeed({
     if (data) {
       const parsed = JSON.parse(data);
       setUserId(parsed.prn || parsed.uid || parsed.id);
+      setUserName(parsed.fullName || parsed.name);
     }
   };
 
@@ -198,7 +203,17 @@ export default function UniversalPostsFeed({
             </Text>
           </TouchableOpacity>
 
-          <Text style={s.actionText}>💬 Comment</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedPost(post);
+              setShowComments(true);
+            }}
+          >
+            <Text style={s.actionText}>
+              💬 Comment ({post.commentCount || 0})
+            </Text>
+          </TouchableOpacity>
+
           <Text style={s.actionText}>📤 Share</Text>
         </View>
       </View>
@@ -222,6 +237,7 @@ export default function UniversalPostsFeed({
   }
 
   return (
+  <>
   <FlatList
     ListHeaderComponent={ListHeaderComponent}
     data={items}
@@ -234,6 +250,17 @@ export default function UniversalPostsFeed({
       <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
     }
   />
+
+  <CommentsModal
+    visible={showComments}
+    onClose={() => setShowComments(false)}
+    post={selectedPost}
+    userId={userId}
+    userName={userName}
+  />
+</>
+  
+  
 );
 
 }
