@@ -18,6 +18,7 @@ import {
   doc,
   setDoc,
 } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { db } from "../../firebase";
 
 export default function EnterMarks() {
@@ -27,14 +28,60 @@ export default function EnterMarks() {
   const [students, setStudents] = useState([]);
   const [marksMap, setMarksMap] = useState({});
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [facultyId, setFacultyId] = useState(null);
+  const [savedMap, setSavedMap] = useState({});
+ 
 
-  // 🔹 Load subjects
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "subjects"), (snap) => {
-      setSubjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
-    return () => unsub();
-  }, []);
+useEffect(() => {
+  const loadFaculty = async () => {
+    const data = await AsyncStorage.getItem("faculty");
+
+    if (data) {
+      const parsed = JSON.parse(data);
+
+      // adjust if needed (important)
+      setFacultyId(parsed.id || parsed.uid || parsed.facultyId || parsed.phone);
+    }
+  };
+
+  loadFaculty();
+}, []);
+
+useEffect(() => {
+  if (!facultyId) return;
+
+  const loadAssignedSubjects = async () => {
+    try {
+      // 1️⃣ Get assignments for this faculty
+      const q = query(
+        collection(db, "facultyAssignments"),
+        where("facultyId", "==", facultyId)
+      );
+
+      const snap = await getDocs(q);
+
+      const assignedSubjectIds = snap.docs.map((d) => d.data().subjectId);
+
+      if (assignedSubjectIds.length === 0) {
+        setSubjects([]);
+        return;
+      }
+
+      // 2️⃣ Get subjects matching those IDs
+      const subjectsSnap = await getDocs(collection(db, "subjects"));
+
+      const filtered = subjectsSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((sub) => assignedSubjectIds.includes(sub.code));
+
+      setSubjects(filtered);
+    } catch (e) {
+      console.log("Subject load error:", e);
+    }
+  };
+
+  loadAssignedSubjects();
+}, [facultyId]);
 
   // 🔹 When subject selected → load students + existing marks
   useEffect(() => {
@@ -59,10 +106,13 @@ export default function EnterMarks() {
       const marksSnap = await getDocs(mq);
 
       const existingMarks = {};
-      marksSnap.forEach((doc) => {
-        const data = doc.data();
-        existingMarks[data.studentId] = data.marks.toString();
-      });
+        const savedStatus = {};
+
+        marksSnap.forEach((doc) => {
+          const data = doc.data();
+          existingMarks[data.studentId] = data.marks.toString();
+          savedStatus[data.studentId] = true; // ✅ mark as saved
+        });
 
       // 3️⃣ Prepare map
       const initialMap = {};
@@ -72,6 +122,7 @@ export default function EnterMarks() {
 
       setStudents(studentList);
       setMarksMap(initialMap);
+      setSavedMap(savedStatus); // ✅ add this
       setLoadingStudents(false);
     };
 
@@ -99,6 +150,10 @@ export default function EnterMarks() {
       updatedAt: new Date(),
     });
 
+    setSavedMap((prev) => ({
+      ...prev,
+      [student.prn]: true,
+    }));
     Alert.alert(`Saved for ${student.name}`);
   };
 
@@ -140,6 +195,7 @@ export default function EnterMarks() {
               data={students}
               keyExtractor={(item) => item.prn}
               renderItem={({ item }) => (
+                
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name}>{item.name}</Text>
@@ -151,19 +207,33 @@ export default function EnterMarks() {
                     placeholder="Marks"
                     keyboardType="numeric"
                     value={marksMap[item.prn]}
-                    onChangeText={(t) =>
+                    onChangeText={(t) => {
+                      const clean = t.replace(/[^0-9]/g, "");
+
                       setMarksMap({
                         ...marksMap,
-                        [item.prn]: t.replace(/[^0-9]/g, ""),
-                      })
-                    }
+                        [item.prn]: clean,
+                      });
+                    
+                      // 🔄 mark as unsaved if edited
+                      setSavedMap({
+                        ...savedMap,
+                        [item.prn]: false,
+                      });
+                    }}
                   />
 
                   <TouchableOpacity
-                    style={styles.saveBtn}
+                    style={[
+                      styles.saveBtn,
+                      savedMap[item.prn] && styles.savedBtn,
+                    ]}
                     onPress={() => submitMarks(item)}
+                    disabled={savedMap[item.prn]}
                   >
-                    <Text style={{ color: "#fff" }}>Save</Text>
+                    <Text style={{ color: "#fff" }}>
+                      {savedMap[item.prn] ? "Saved" : "Save"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -212,5 +282,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#146ED7",
     padding: 8,
     borderRadius: 8,
+  },
+  savedBtn: {
+    backgroundColor: "#999",
   },
 });
