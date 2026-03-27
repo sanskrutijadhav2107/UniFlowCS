@@ -24,6 +24,9 @@ import {
 import UniversalPostsFeed from "../../components/ui/UniversalPostsFeed";
 import BottomNavbar from "./components/BottomNavbar";
 
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 60) / 3;
 
@@ -62,17 +65,37 @@ export default function FacultyHome() {
     loadProfile();
   }, []);
 
+  
+
   const loadProfile = async () => {
-    try {
-      const raw = await AsyncStorage.getItem("faculty") || await AsyncStorage.getItem("currentUser");
-      if (raw) setFaculty(JSON.parse(raw));
-    } catch (err) {
-      console.warn(err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  try {
+    const raw = await AsyncStorage.getItem("faculty") || await AsyncStorage.getItem("currentUser");
+    if (raw) {
+      let facultyData = JSON.parse(raw);
+      setFaculty(facultyData); // Show local data immediately for speed
+
+      // Background Sync: Get fresh data (photo) from Firebase
+      if (facultyData.email) {
+        const docRef = doc(db, "faculty", facultyData.email);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const cloudData = snap.data();
+          if (cloudData.photo !== facultyData.photo) {
+            const finalData = { ...facultyData, ...cloudData };
+            setFaculty(finalData);
+            await AsyncStorage.setItem("faculty", JSON.stringify(finalData));
+          }
+        }
+      }
     }
-  };
+  } catch (err) {
+    console.warn(err);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
+
 
   if (loading) return (
     <View style={styles.loadingWrap}>
@@ -84,7 +107,7 @@ export default function FacultyHome() {
     { title: "Upload", sub: "Notes", route: "/Faculty/FacultyUploadNotes", icon: "upload-cloud", color: "#2D6EEF", bg: "#EBF0FD" },
     { title: "Notice", sub: "Announce", route: "/Faculty/FacultyNotice", icon: "bell", color: "#8B5CF6", bg: "#F3EEFF" },
     { title: "Grading", sub: "Marks", route: "/Faculty/enterMarks", icon: "edit-3", color: "#10B981", bg: "#EDFAF3" },
-    { title: "Schedule", sub: "Timing", route: "/Faculty/timetable", icon: "calendar", color: "#06B6D4", bg: "#E0F8FD" },
+    { title: "Schedule", sub: "Timing", route: "/Faculty/FacultyTimeTable", icon: "calendar", color: "#06B6D4", bg: "#E0F8FD" },
   ];
 
   return (

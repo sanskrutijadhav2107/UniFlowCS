@@ -1,40 +1,47 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  TextInput,
-  Alert,
-  Platform,
-  KeyboardAvoidingView,
-} from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import * as Notifications from "expo-notifications";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   orderBy,
   query,
-  // 🔥 NEW:
-  deleteDoc,
-  doc,
 } from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { db } from "../../firebase";
 import AdminNavbar from "./components/AdminNavbar";
 
-// Foreground notification behaviour
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false, // keep silent in-foreground; change to true if you want sound
-    shouldSetBadge: false,
-  }),
-});
+const COLORS = {
+  primaryDark: "#1A50C8",
+  primary: "#2D6EEF",
+  primaryLight: "#60A5FA",
+  bg: "#F8FAFF",
+  white: "#FFFFFF",
+  textMain: "#0F172A",
+  textSub: "#64748B",
+  accent: "#E0E7FF",
+  danger: "#EF4444",
+  success: "#10B981"
+};
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAY_MAP = { Sun: 1, Mon: 2, Tue: 3, Wed: 4, Thu: 5, Fri: 6, Sat: 7 };
@@ -43,27 +50,20 @@ const two = (n) => String(n).padStart(2, "0");
 const toHHMM = (date) => `${two(date.getHours())}:${two(date.getMinutes())}`;
 
 export default function Timetable() {
-  const [selectedDay, setSelectedDay] = useState("Mon");
+  // 💡 AUTO-SELECT CURRENT DAY
+  const currentDayName = DAYS[new Date().getDay() - 1] || "Mon";
+  const [selectedDay, setSelectedDay] = useState(currentDayName);
+  
   const [slots, setSlots] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [form, setForm] = useState({
-    day: "Mon",
-    subjectName: "",
-    className: "",
-  });
+  const [form, setForm] = useState({ day: selectedDay, subjectName: "", className: "" });
 
-  // Use today's date when creating time objects to avoid timezone shifts
   const today = new Date();
-  const [startTime, setStartTime] = useState(
-    new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0)
-  );
-  const [endTime, setEndTime] = useState(
-    new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0)
-  );
+  const [startTime, setStartTime] = useState(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0));
+  const [endTime, setEndTime] = useState(new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0));
 
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -75,7 +75,6 @@ export default function Timetable() {
         const snap = await getDocs(qy);
         setSlots(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
-        console.error("Fetch timetable error:", e);
         Alert.alert("Error", "Could not load timetable.");
       } finally {
         setLoading(false);
@@ -90,13 +89,18 @@ export default function Timetable() {
     return byDay;
   }, [slots]);
 
+  // 💡 HELPER FOR BATCH TAG COLORS
+  const getBatchColor = (batch) => {
+    const b = batch.toUpperCase();
+    if (b.includes("FY")) return "#6366F1";
+    if (b.includes("SY")) return "#F59E0B";
+    if (b.includes("TY")) return "#10B981";
+    return COLORS.primary;
+  };
+
   const openAdd = (day) => {
     const now = new Date();
-    setForm({
-      day: day || selectedDay,
-      subjectName: "",
-      className: "",
-    });
+    setForm({ day: day || selectedDay, subjectName: "", className: "" });
     setStartTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0));
     setEndTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0));
     setModalVisible(true);
@@ -104,344 +108,157 @@ export default function Timetable() {
 
   const ensureNotifPermission = async () => {
     const { status } = await Notifications.getPermissionsAsync();
-    if (status !== "granted") {
-      const req = await Notifications.requestPermissionsAsync();
-      if (req.status !== "granted") {
-        Alert.alert(
-          "Permission",
-          "Notifications are disabled. Reminders won’t appear until you allow them in Settings."
-        );
-      }
-    }
+    if (status !== "granted") await Notifications.requestPermissionsAsync();
   };
 
-  const parseTime = (hhmm) => {
-    const m = /^(\d{2}):(\d{2})$/.exec(hhmm.trim());
-    if (!m) return null;
-    const hour = Number(m[1]);
-    const minute = Number(m[2]);
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-    return { hour, minute };
-  };
-
-  // Schedules exactly one reminder time per week per slot: 5 minutes before the lecture start
   const scheduleReminder = async ({ day, subjectName, className, start }) => {
-    const tm = parseTime(start);
-    if (!tm) return null;
+    const tm = { hour: parseInt(start.split(":")[0]), minute: parseInt(start.split(":")[1]) };
     const weekday = WEEKDAY_MAP[day];
-    if (!weekday) return null;
-
-    // compute 5 minutes before
     let hour = tm.hour;
     let minute = tm.minute - 5;
-    if (minute < 0) {
-      minute += 60;
-      hour = (hour + 23) % 24;
-    }
-
+    if (minute < 0) { minute += 60; hour = (hour + 23) % 24; }
     try {
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Upcoming Lecture",
-          body: `${subjectName} (${className}) starts at ${start}`,
-          data: { subjectName, className, start, day },
-        },
-        trigger: {
-          weekday, // 1=Sun ... 7=Sat (we mapped Mon..Sat to 2..7)
-          hour,
-          minute,
-          repeats: true, // weekly at that time → "only 5 min before" each week
-        },
+      return await Notifications.scheduleNotificationAsync({
+        content: { title: "Lecture Reminder", body: `${subjectName} starts in 5 mins` },
+        trigger: { weekday, hour, minute, repeats: true },
       });
-      return id;
-    } catch (e) {
-      console.warn("scheduleNotification error:", e);
-      return null;
-    }
+    } catch (e) { return null; }
   };
 
   const handleSaveSlot = async () => {
     const { day, subjectName, className } = form;
-    if (!day || !subjectName.trim() || !className.trim()) {
-      Alert.alert("Validation", "Fill all fields (day, subject, class, time).");
+    if (!subjectName.trim() || !className.trim()) {
+      Alert.alert("Missing Info", "Please enter the subject and batch details.");
       return;
     }
-
-    const start = toHHMM(startTime);
-    const end = toHHMM(endTime);
-
-    // Optional guard: end must be after start
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    if (eh * 60 + em <= sh * 60 + sm) {
-      Alert.alert("Validation", "End time must be after start time.");
-      return;
-    }
-
     setSaving(true);
     try {
-      const notificationId = await scheduleReminder({
-        day,
-        subjectName: subjectName.trim(),
-        className: className.trim(),
-        start,
-      });
-
+      const start = toHHMM(startTime);
+      const end = toHHMM(endTime);
+      const notificationId = await scheduleReminder({ day, subjectName, className, start });
       const docRef = await addDoc(collection(db, "timetableSessions"), {
-        day,
-        subjectName: subjectName.trim(),
-        className: className.trim(),
-        start,
-        end,
-        notificationId: notificationId || null,
-        createdAt: new Date().toISOString(),
+        day, subjectName, className, start, end, notificationId, createdAt: new Date().toISOString()
       });
-
-      setSlots((prev) => [
-        ...prev,
-        {
-          id: docRef.id,
-          day,
-          subjectName: subjectName.trim(),
-          className: className.trim(),
-          start,
-          end,
-          notificationId: notificationId || null,
-        },
-      ]);
-
+      setSlots([...slots, { id: docRef.id, day, subjectName, className, start, end, notificationId }]);
       setModalVisible(false);
-      Alert.alert("Saved", "Slot saved and 5-minute reminder scheduled.");
-    } catch (e) {
-      console.error("Save slot error:", e);
-      Alert.alert("Error", "Could not save slot.");
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { Alert.alert("Error", "Save failed"); }
+    finally { setSaving(false); }
   };
 
-  // 🔥 NEW: delete a slot → cancel notification + delete doc + update UI
-  const handleDeleteSlot = async (slot) => {
-    try {
-      if (slot.notificationId) {
-        try {
-          await Notifications.cancelScheduledNotificationAsync(slot.notificationId);
-        } catch (err) {
-          console.warn("Notification cancel failed (maybe already gone):", err?.message);
-        }
-      }
-      await deleteDoc(doc(db, "timetableSessions", slot.id));
-      setSlots((prev) => prev.filter((s) => s.id !== slot.id));
-      Alert.alert("Deleted", "Slot removed and reminder cancelled.");
-    } catch (e) {
-      console.error("Delete slot error:", e);
-      Alert.alert("Error", "Could not delete slot.");
-    }
+  const handleDeleteSlot = (slot) => {
+    Alert.alert("Remove Lecture", "Are you sure you want to delete this slot?", [
+      { text: "Keep it", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: async () => {
+          try {
+            if (slot.notificationId) await Notifications.cancelScheduledNotificationAsync(slot.notificationId);
+            await deleteDoc(doc(db, "timetableSessions", slot.id));
+            setSlots(slots.filter(s => s.id !== slot.id));
+          } catch (e) { Alert.alert("Error", "Delete failed"); }
+      }}
+    ]);
   };
-
-  const dayStyles = [
-    { color: "#4D96FF", icon: "book-outline" },
-    { color: "#4D96FF", icon: "desktop-outline" },
-    { color: "#4D96FF", icon: "school-outline" },
-    { color: "#4D96FF", icon: "laptop-outline" },
-    { color: "#4D96FF", icon: "stats-chart-outline" },
-    { color: "#4D96FF", icon: "school-outline" },
-  ];
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.pageTitle}>Class Timetable</Text>
-        <Text style={styles.subTitle}>Organize your schedule day by day</Text>
-      </View>
-
-      {/* Add button */}
-      <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 4 }}>
-        <TouchableOpacity style={styles.addBtn} onPress={() => openAdd(selectedDay)}>
-          <Ionicons name="add-circle-outline" size={22} color="#fff" />
-          <Text style={styles.addBtnText}>Add Slot</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Days Row */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
-        {DAYS.map((day, index) => {
-          const isActive = selectedDay === day;
-          const { color, icon } = dayStyles[index];
-          return (
-            <TouchableOpacity key={day} style={styles.dayItem} onPress={() => setSelectedDay(day)} activeOpacity={0.8}>
-              <View style={[styles.dayCircle, { backgroundColor: isActive ? color : "#E0E0E0" }]}>
-                <Ionicons name={icon} size={28} color={isActive ? "#fff" : "#666"} />
-              </View>
-              <Text style={[styles.dayLabel, isActive && styles.activeDayLabel]}>{day}</Text>
-              {isActive && <View style={styles.activeLine} />}
+      <StatusBar barStyle="light-content" />
+      
+      <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={styles.header}>
+        <SafeAreaView>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.headerTitle}>Timetable</Text>
+              <Text style={styles.headerSub}>Control the daily flow</Text>
+            </View>
+            <TouchableOpacity onPress={() => openAdd(selectedDay)} style={styles.addCircle}>
+              <Ionicons name="add" size={30} color="white" />
             </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Subjects list */}
-      <ScrollView contentContainerStyle={styles.subjectContainer}>
-        {(loading ? [] : timetableData[selectedDay] || []).map((sub, index) => (
-          <View key={sub.id || index} style={styles.subjectCard}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="book" size={22} color="#fff" />
-              <Text style={styles.subjectName}>{sub.subjectName}</Text>
-
-              {/* 🔥 NEW: delete button */}
-              <TouchableOpacity
-                onPress={() =>
-                  Alert.alert(
-                    "Delete slot?",
-                    `${sub.subjectName} (${sub.start}–${sub.end})`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Delete", style: "destructive", onPress: () => handleDeleteSlot(sub) },
-                    ]
-                  )
-                }
-                style={styles.deleteBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="trash-outline" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.cardBody}>
-              <View style={styles.detailRow}>
-                <Ionicons name="time-outline" size={20} color="#146ED7" />
-                <Text style={styles.subjectDetail}>
-                  {sub.start} - {sub.end}
-                </Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Ionicons name="people-outline" size={20} color="#146ED7" />
-                <Text style={styles.subjectDetail}>Class: {sub.className}</Text>
-              </View>
-            </View>
           </View>
-        ))}
-        {!loading && (timetableData[selectedDay] || []).length === 0 && (
-          <Text style={{ textAlign: "center", color: "#666", marginTop: 8 }}>
-            No slots yet. Tap “Add Slot”.
-          </Text>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* DAY PICKER */}
+      <View style={styles.dayStrip}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
+          {DAYS.map(day => (
+            <TouchableOpacity 
+              key={day} 
+              onPress={() => setSelectedDay(day)} 
+              style={[styles.dayTab, selectedDay === day && styles.activeDayTab]}
+            >
+              <Text style={[styles.dayTabText, selectedDay === day && styles.activeDayTabText]}>{day}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* LECTURE LIST */}
+      <ScrollView contentContainerStyle={styles.listArea}>
+        {loading ? (
+          <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} />
+        ) : (timetableData[selectedDay] || []).length > 0 ? (
+          (timetableData[selectedDay] || []).map((sub) => (
+            <View key={sub.id} style={styles.lectureRow}>
+              <View style={styles.timeCol}>
+                <Text style={styles.timeMain}>{sub.start}</Text>
+                <View style={styles.dotLine} />
+                <Text style={styles.timeSub}>{sub.end}</Text>
+              </View>
+
+              <View style={styles.lectureCard}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.batchTag, { backgroundColor: getBatchColor(sub.className) }]}>
+                    <Text style={styles.batchText}>{sub.className}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => handleDeleteSlot(sub)}>
+                    <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.subjectTitle}>{sub.subjectName}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="calendar-outline" size={80} color={COLORS.accent} />
+            <Text style={styles.emptyText}>No classes scheduled for {selectedDay}</Text>
+          </View>
         )}
       </ScrollView>
 
-      {/* Add Slot Modal (scrollable body + clock pickers) */}
+      {/* ADD MODAL */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalWrap}>
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ width: "100%" }}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Add Slot</Text>
+        <View style={styles.modalBackdrop}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalSheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Add New Lecture</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}><Ionicons name="close-circle" size={28} color={COLORS.textSub} /></TouchableOpacity>
+            </View>
 
-              <ScrollView contentContainerStyle={{ paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
-                {/* Day chips */}
-                <View style={styles.row}>
-                  <Text style={styles.label}>Day</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {DAYS.map((d) => (
-                      <TouchableOpacity
-                        key={d}
-                        style={[styles.chip, form.day === d && { backgroundColor: "#146ED7" }]}
-                        onPress={() => setForm((f) => ({ ...f, day: d }))}
-                      >
-                        <Text style={[styles.chipText, form.day === d && { color: "#fff" }]}>{d}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Subject</Text>
+              <TextInput style={styles.input} placeholder="e.g. Computer Networks" value={form.subjectName} onChangeText={t => setForm({...form, subjectName: t})} />
 
-                {/* Subject */}
-                <View style={styles.row}>
-                  <Text style={styles.label}>Subject</Text>
-                  <TextInput
-                    value={form.subjectName}
-                    onChangeText={(t) => setForm((f) => ({ ...f, subjectName: t }))}
-                    placeholder="e.g., Operating System"
-                    style={styles.input}
-                  />
-                </View>
+              <Text style={styles.inputLabel}>Class Batch</Text>
+              <TextInput style={styles.input} placeholder="e.g. TY-CS-B" value={form.className} onChangeText={t => setForm({...form, className: t})} />
 
-                {/* Class */}
-                <View style={styles.row}>
-                  <Text style={styles.label}>Class</Text>
-                  <TextInput
-                    value={form.className}
-                    onChangeText={(t) => setForm((f) => ({ ...f, className: t }))}
-                    placeholder="e.g., TY, SY, FY"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* Time pickers */}
-                <View style={[styles.row, { gap: 10 }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.label}>Start Time</Text>
-                    <TouchableOpacity style={styles.timeBtn} onPress={() => setShowStartPicker(true)}>
-                      <Ionicons name="time-outline" size={18} color="#146ED7" />
-                      <Text style={styles.timeText}>{toHHMM(startTime)}</Text>
-                    </TouchableOpacity>
-                    {showStartPicker && (
-                      <DateTimePicker
-                        value={startTime}
-                        mode="time"
-                        is24Hour
-                        display={Platform.OS === "ios" ? "spinner" : "clock"}
-                        onChange={(event, date) => {
-                          if (Platform.OS === "android") setShowStartPicker(false);
-                          if (date) {
-                            const d = new Date(startTime);
-                            d.setHours(date.getHours(), date.getMinutes(), 0, 0);
-                            setStartTime(d);
-                          }
-                        }}
-                      />
-                    )}
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.label}>End Time</Text>
-                    <TouchableOpacity style={styles.timeBtn} onPress={() => setShowEndPicker(true)}>
-                      <Ionicons name="time-outline" size={18} color="#146ED7" />
-                      <Text style={styles.timeText}>{toHHMM(endTime)}</Text>
-                    </TouchableOpacity>
-                    {showEndPicker && (
-                      <DateTimePicker
-                        value={endTime}
-                        mode="time"
-                        is24Hour
-                        display={Platform.OS === "ios" ? "spinner" : "clock"}
-                        onChange={(event, date) => {
-                          if (Platform.OS === "android") setShowEndPicker(false);
-                          if (date) {
-                            const d = new Date(endTime);
-                            d.setHours(date.getHours(), date.getMinutes(), 0, 0);
-                            setEndTime(d);
-                          }
-                        }}
-                      />
-                    )}
-                  </View>
-                </View>
-              </ScrollView>
-
-              {/* Actions */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: "#ccc" }]} onPress={() => setModalVisible(false)} disabled={saving}>
-                  <Text style={styles.btnText}>Cancel</Text>
+              <View style={styles.timeGrid}>
+                <TouchableOpacity style={styles.timeInput} onPress={() => setShowStartPicker(true)}>
+                  <Text style={styles.timeLabel}>Starts</Text>
+                  <Text style={styles.timeVal}>{toHHMM(startTime)}</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: "#146ED7" }]}
-                  onPress={handleSaveSlot}
-                  disabled={saving}
-                >
-                  <Text style={styles.btnText}>{saving ? "Saving..." : "Save"}</Text>
+                <TouchableOpacity style={styles.timeInput} onPress={() => setShowEndPicker(true)}>
+                  <Text style={styles.timeLabel}>Ends</Text>
+                  <Text style={styles.timeVal}>{toHHMM(endTime)}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+
+              {showStartPicker && <DateTimePicker value={startTime} mode="time" is24Hour onChange={(e, d) => { setShowStartPicker(false); if(d) setStartTime(d); }} />}
+              {showEndPicker && <DateTimePicker value={endTime} mode="time" is24Hour onChange={(e, d) => { setShowEndPicker(false); if(d) setEndTime(d); }} />}
+
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSaveSlot} disabled={saving}>
+                {saving ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Schedule</Text>}
+              </TouchableOpacity>
+            </ScrollView>
           </KeyboardAvoidingView>
         </View>
       </Modal>
@@ -452,66 +269,45 @@ export default function Timetable() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F3F7FD" },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { paddingBottom: 40, paddingHorizontal: 25, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: 'white' },
+  headerSub: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+  addCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
 
-  header: {
-    paddingTop: 30, paddingBottom: 20, paddingHorizontal: 20,
-    backgroundColor: "#E3F0FF",
-    borderBottomLeftRadius: 18, borderBottomRightRadius: 18,
-    shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 }, elevation: 6,
-  },
-  pageTitle: { fontSize: 24, fontWeight: "800", color: "#146ED7" },
-  subTitle: { fontSize: 14, color: "#146ED7", marginTop: 4 },
+  dayStrip: { marginTop: -25 },
+  dayTab: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'white', borderRadius: 20, marginRight: 10, elevation: 4 },
+  activeDayTab: { backgroundColor: COLORS.primaryDark },
+  dayTabText: { fontWeight: '800', color: COLORS.textSub },
+  activeDayTabText: { color: 'white' },
 
-  dayRow: { flexDirection: "row", paddingHorizontal: 15, marginVertical: 20, alignItems: "center" },
-  dayItem: { alignItems: "center", marginHorizontal: 12 },
-  dayCircle: {
-    width: 70, height: 70, borderRadius: 35, justifyContent: "center", alignItems: "center",
-    marginTop: 5, marginBottom: 10, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 }, elevation: 5,
-  },
-  dayLabel: { fontSize: 14, fontWeight: "600", color: "#666" },
-  activeDayLabel: { color: "#146ED7", fontWeight: "700" },
-  activeLine: { height: 3, width: 32, backgroundColor: "#146ED7", borderRadius: 2, marginTop: 6 },
+  listArea: { padding: 20, paddingBottom: 100 },
+  lectureRow: { flexDirection: 'row', marginBottom: 25 },
+  timeCol: { width: 60, alignItems: 'center', marginRight: 15 },
+  timeMain: { fontSize: 14, fontWeight: '900', color: COLORS.primary },
+  timeSub: { fontSize: 12, fontWeight: '600', color: COLORS.textSub },
+  dotLine: { width: 2, flex: 1, backgroundColor: COLORS.accent, marginVertical: 5, borderRadius: 1 },
 
-  subjectContainer: { paddingHorizontal: 18, paddingBottom: 90 },
-  subjectCard: {
-    backgroundColor: "#fff", borderRadius: 16, marginBottom: 24,
-    shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 }, elevation: 5, overflow: "hidden",
-  },
-  cardHeader: { flexDirection: "row", alignItems: "center", backgroundColor: "#146ED7", paddingVertical: 12, paddingHorizontal: 16 },
-  subjectName: { flex: 1, fontSize: 20, fontWeight: "700", color: "#fff", marginLeft: 10 },
-  // 🔥 NEW:
-  deleteBtn: { paddingLeft: 10, paddingVertical: 6 },
+  lectureCard: { flex: 1, backgroundColor: 'white', borderRadius: 20, padding: 15, elevation: 3 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  batchTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  batchText: { fontSize: 10, fontWeight: '900', color: 'white' },
+  subjectTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textMain },
 
-  cardBody: { padding: 18 },
-  detailRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  subjectDetail: { fontSize: 16, color: "#333", marginLeft: 10 },
+  emptyState: { alignItems: 'center', marginTop: 80 },
+  emptyText: { color: COLORS.textSub, fontWeight: '700', marginTop: 15 },
 
-  addBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#146ED7", paddingVertical: 10, borderRadius: 10, justifyContent: "center" },
-  addBtnText: { color: "#fff", fontWeight: "700" },
-
-  modalWrap: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "center", alignItems: "center", padding: 18 },
-  modalCard: { width: "100%", backgroundColor: "#fff", borderRadius: 14, padding: 16, maxHeight: "85%" },
-  modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 12, color: "#111" },
-
-  row: { marginBottom: 12 },
-  label: { fontSize: 12, fontWeight: "700", color: "#555", marginBottom: 6 },
-  input: { backgroundColor: "#EEF4FF", padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "#CFE0FF" },
-
-  chip: { backgroundColor: "#EEF4FF", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: "#CFE0FF" },
-  chipText: { color: "#146ED7", fontWeight: "700" },
-
-  timeBtn: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#EEF4FF", padding: 10, borderRadius: 8,
-    borderWidth: 1, borderColor: "#CFE0FF",
-  },
-  timeText: { fontWeight: "700", color: "#146ED7" },
-
-  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 10 },
-  btn: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  btnText: { color: "#fff", fontWeight: "800" },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: 'white', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, maxHeight: '85%' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  sheetTitle: { fontSize: 22, fontWeight: '900', color: COLORS.textMain },
+  inputLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSub, marginBottom: 8, marginTop: 15 },
+  input: { backgroundColor: '#F1F5F9', borderRadius: 15, padding: 15, fontWeight: '700', color: COLORS.textMain },
+  timeGrid: { flexDirection: 'row', gap: 15, marginTop: 20 },
+  timeInput: { flex: 1, backgroundColor: '#EEF2FF', padding: 15, borderRadius: 15, alignItems: 'center' },
+  timeLabel: { fontSize: 10, fontWeight: '800', color: COLORS.primary },
+  timeVal: { fontSize: 18, fontWeight: '900', color: COLORS.primaryDark },
+  saveBtn: { backgroundColor: COLORS.primary, padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 30 },
+  saveBtnText: { color: 'white', fontWeight: '900', fontSize: 16 }
 });

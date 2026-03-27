@@ -1,32 +1,360 @@
-// components/UniversalComponents/UniversalPostsFeed.jsx
-import React, { useEffect, useRef, useState } from "react";
+// // components/UniversalComponents/UniversalPostsFeed.jsx
+// import React, { useEffect, useRef, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   Image,
+//   StyleSheet,
+//   ActivityIndicator,
+//   TouchableOpacity,
+//   FlatList,
+//   RefreshControl,
+// } from "react-native";
+// import {
+//   collection,
+//   doc,
+//   increment,
+//   limit as qLimit,
+//   onSnapshot,
+//   orderBy,
+//   query,
+//   startAfter,
+//   updateDoc,
+//   where,
+//   getDocs,
+// } from "firebase/firestore";
+// import CommentsModal from "./CommentsModal";
+// import { db } from "../../firebase";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { arrayUnion, arrayRemove } from "firebase/firestore";
+// export default function UniversalPostsFeed({
+//   ListHeaderComponent,
+//   collectionName = "posts",
+//   filters = [],
+//   pageSize = 10,
+//   showImage = true,
+//   showAvatar = true,
+//   enableLike = true,
+//   renderItem,
+//   emptyText = "No posts yet. Tap the ➕ to create one.",
+// }) {
+//   const [items, setItems] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [paging, setPaging] = useState(false);
+//   const [refreshing, setRefreshing] = useState(false);
+
+//   const lastDocRef = useRef(null);
+//   const unsubRef = useRef(null);
+//   const [userId, setUserId] = useState(null);
+
+//   const [selectedPost, setSelectedPost] = useState(null);
+//   const [showComments, setShowComments] = useState(false);
+//   const [userName, setUserName] = useState("");
+
+//   useEffect(() => {
+//   const loadUser = async () => {
+//     const data =
+//       (await AsyncStorage.getItem("student")) ||
+//       (await AsyncStorage.getItem("faculty")) ||
+//       (await AsyncStorage.getItem("admin"));
+
+//     if (data) {
+//       const parsed = JSON.parse(data);
+//       setUserId(parsed.prn || parsed.uid || parsed.id);
+//       setUserName(parsed.fullName || parsed.name);
+//     }
+//   };
+
+//   loadUser();
+// }, []);
+
+//   // 🔥 Correct Firestore listener (NO dependency trap)
+//   useEffect(() => {
+//     if (unsubRef.current) unsubRef.current();
+
+//     setLoading(true);
+
+//     const col = collection(db, collectionName);
+//     let qy = query(col, orderBy("createdAt", "desc"), qLimit(pageSize));
+
+//     filters.forEach(([field, op, val]) => {
+//       qy = query(qy, where(field, op, val));
+//     });
+
+//     unsubRef.current = onSnapshot(qy, (snap) => {
+//       const data = snap.docs.map((d) => ({ id: d.id, _doc: d, ...d.data() }));
+//       setItems(data);
+//       lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
+//       setLoading(false);
+//       setRefreshing(false);
+//     });
+
+//     return () => unsubRef.current && unsubRef.current();
+//   }, [collectionName, pageSize]);
+
+//   const fetchMore = async () => {
+//     if (paging || !lastDocRef.current) return;
+//     setPaging(true);
+
+//     try {
+//       const col = collection(db, collectionName);
+//       let moreQ = query(
+//         col,
+//         orderBy("createdAt", "desc"),
+//         startAfter(lastDocRef.current),
+//         qLimit(pageSize)
+//       );
+
+//       filters.forEach(([f, op, val]) => {
+//         moreQ = query(moreQ, where(f, op, val));
+//       });
+
+//       const snap = await getDocs(moreQ);
+//       const more = snap.docs.map((d) => ({ id: d.id, _doc: d, ...d.data() }));
+
+//       if (more.length) {
+//         setItems((prev) => [...prev, ...more]);
+//         lastDocRef.current = snap.docs[snap.docs.length - 1];
+//       } else {
+//         lastDocRef.current = null;
+//       }
+//     } finally {
+//       setPaging(false);
+//     }
+//   };
+
+//   const onRefresh = () => setRefreshing(true);
+
+//   const like = async (post) => {
+//   if (!enableLike || !userId) return;
+
+//   const postRef = doc(db, collectionName, post.id);
+//   const alreadyLiked = post.likedBy?.includes(userId);
+
+//   try {
+//     if (alreadyLiked) {
+//       // UNLIKE
+//       await updateDoc(postRef, {
+//         likedBy: arrayRemove(userId),
+//         likeCount: increment(-1),
+//       });
+
+//       // 🔻 remove points from post owner
+//       if (post.uid) {
+//         await updateDoc(doc(db, "students", post.uid), {
+//           points: increment(-2),
+//         });
+//       }
+
+//     } else {
+//       // LIKE
+//       await updateDoc(postRef, {
+//         likedBy: arrayUnion(userId),
+//         likeCount: increment(1),
+//       });
+
+//       // 🔺 add points to post owner
+//       if (post.uid) {
+//         await updateDoc(doc(db, "students", post.uid), {
+//           points: increment(2),
+//         });
+//       }
+//     }
+//   } catch (e) {
+//     console.log("Like error:", e);
+//   }
+// };
+
+//   const defaultRenderer = (post) => {
+//     const imgUri = post.imageUrl || post.previewUrl || null;
+
+//     const isLiked = post.likedBy?.includes(userId);
+
+//     return (
+//       <View style={s.card}>
+//         <View style={s.header}>
+//           {showAvatar && (
+//             <Image
+//               source={{
+//                 uri:
+//                   post.authorAvatar ||
+//                   "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+//               }}
+//               style={s.avatar}
+//             />
+//           )}
+//           <View style={{ flex: 1 }}>
+//             <Text style={s.name} numberOfLines={1}>
+//               {post.authorName || "Student"}
+//             </Text>
+//             <Text style={s.sub}>shared an update</Text>
+//           </View>
+//         </View>
+
+//         {post.caption && <Text style={s.caption}>{post.caption}</Text>}
+//         {showImage && imgUri && (
+//           <Image source={{ uri: imgUri }} style={s.image} />
+//         )}
+
+//         <View style={s.actions}>
+//           <TouchableOpacity onPress={() => like(post)}>
+//             <Text style={[s.actionText, isLiked && s.liked]}>
+//               👍 {isLiked ? "Liked" : "Like"} ({post.likeCount || 0})
+//             </Text>
+//           </TouchableOpacity>
+
+//           <TouchableOpacity
+//             onPress={() => {
+//               setSelectedPost(post);
+//               setShowComments(true);
+//             }}
+//           >
+//             <Text style={s.actionText}>
+//               💬 Comment ({post.commentCount || 0})
+//             </Text>
+//           </TouchableOpacity>
+
+//           <Text style={s.actionText}>📤 Share</Text>
+//         </View>
+//       </View>
+//     );
+//   };
+
+//   const render = ({ item }) =>
+//     renderItem ? renderItem(item, defaultRenderer) : defaultRenderer(item);
+
+//   if (loading && !items.length) {
+//     return (
+//       <View style={s.loading}>
+//         <ActivityIndicator color="#2d6eefff" />
+//         <Text style={{ marginTop: 8 }}>Loading posts…</Text>
+//       </View>
+//     );
+//   }
+
+//   if (!loading && items.length === 0) {
+//     return <Text style={s.empty}>{emptyText}</Text>;
+//   }
+
+//   return (
+//   <>
+//   <FlatList
+//     ListHeaderComponent={ListHeaderComponent}
+//     data={items}
+//     renderItem={render}
+//     keyExtractor={(it) => it.id}
+//     contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120 }}
+//     onEndReachedThreshold={0.3}
+//     onEndReached={fetchMore}
+//     refreshControl={
+//       <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+//     }
+//   />
+
+//   <CommentsModal
+//     visible={showComments}
+//     onClose={() => setShowComments(false)}
+//     post={selectedPost}
+//     userId={userId}
+//     userName={userName}
+//   />
+// </>
+  
+  
+// );
+
+// }
+
+// const s = StyleSheet.create({
+//   loading: { padding: 16, alignItems: "center" },
+//   empty: { textAlign: "center", color: "#666", marginTop: 12 },
+
+//   card: {
+//     backgroundColor: "#fff",
+//     padding: 12,
+//     marginTop: 10,
+//     borderRadius: 15,
+//     elevation: 2,
+//     borderWidth: 1,
+//     borderColor: "#eee",
+//   },
+//   header: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+//   avatar: {
+//     width: 36,
+//     height: 36,
+//     borderRadius: 18,
+//     marginRight: 10,
+//     backgroundColor: "#eee",
+//   },
+//   name: { fontWeight: "800" },
+//   sub: { fontSize: 12, color: "#6A7A90" },
+//   caption: { marginVertical: 6 },
+//   image: {
+//     width: "100%",
+//     height: 180,
+//     borderRadius: 10,
+//     backgroundColor: "#f1f1f1",
+//   },
+//   actions: {
+//     flexDirection: "row",
+//     justifyContent: "space-around",
+//     marginTop: 10,
+//   },
+//   actionText: {
+//   fontWeight: "600",
+//   color: "#555",
+// },
+
+// liked: {
+//   color: "#1877F2",
+// },
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { Feather } from "@expo/vector-icons"; // Added for the trash icon
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  FlatList,
-  RefreshControl,
-} from "react-native";
-import {
+  arrayRemove,
+  arrayUnion,
   collection,
+  deleteDoc,
   doc,
+  getDocs,
   increment,
-  limit as qLimit,
   onSnapshot,
   orderBy,
+  limit as qLimit,
   query,
   startAfter,
   updateDoc,
   where,
-  getDocs,
 } from "firebase/firestore";
-import CommentsModal from "./CommentsModal";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { db } from "../../firebase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { arrayUnion, arrayRemove } from "firebase/firestore";
+import CommentsModal from "./CommentsModal";
+
 export default function UniversalPostsFeed({
   ListHeaderComponent,
   collectionName = "posts",
@@ -52,26 +380,24 @@ export default function UniversalPostsFeed({
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-  const loadUser = async () => {
-    const data =
-      (await AsyncStorage.getItem("student")) ||
-      (await AsyncStorage.getItem("faculty")) ||
-      (await AsyncStorage.getItem("admin"));
+    const loadUser = async () => {
+      const data =
+        (await AsyncStorage.getItem("student")) ||
+        (await AsyncStorage.getItem("faculty")) ||
+        (await AsyncStorage.getItem("admin"));
 
-    if (data) {
-      const parsed = JSON.parse(data);
-      setUserId(parsed.prn || parsed.uid || parsed.id);
-      setUserName(parsed.fullName || parsed.name);
-    }
-  };
+      if (data) {
+        const parsed = JSON.parse(data);
+        // Ensure we capture the correct ID field used in your database
+        setUserId(parsed.prn || parsed.uid || parsed.id);
+        setUserName(parsed.fullName || parsed.name);
+      }
+    };
+    loadUser();
+  }, []);
 
-  loadUser();
-}, []);
-
-  // 🔥 Correct Firestore listener (NO dependency trap)
   useEffect(() => {
     if (unsubRef.current) unsubRef.current();
-
     setLoading(true);
 
     const col = collection(db, collectionName);
@@ -125,50 +451,62 @@ export default function UniversalPostsFeed({
 
   const onRefresh = () => setRefreshing(true);
 
+  const deletePost = (postId) => {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this update permanently?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, collectionName, postId));
+            } catch (e) {
+              console.log("Delete error:", e);
+              Alert.alert("Error", "Failed to delete post.");
+            }
+          } 
+        }
+      ]
+    );
+  };
+
   const like = async (post) => {
-  if (!enableLike || !userId) return;
+    if (!enableLike || !userId) return;
 
-  const postRef = doc(db, collectionName, post.id);
-  const alreadyLiked = post.likedBy?.includes(userId);
+    const postRef = doc(db, collectionName, post.id);
+    const alreadyLiked = post.likedBy?.includes(userId);
 
-  try {
-    if (alreadyLiked) {
-      // UNLIKE
-      await updateDoc(postRef, {
-        likedBy: arrayRemove(userId),
-        likeCount: increment(-1),
-      });
-
-      // 🔻 remove points from post owner
-      if (post.uid) {
-        await updateDoc(doc(db, "students", post.uid), {
-          points: increment(-2),
+    try {
+      if (alreadyLiked) {
+        await updateDoc(postRef, {
+          likedBy: arrayRemove(userId),
+          likeCount: increment(-1),
         });
-      }
-
-    } else {
-      // LIKE
-      await updateDoc(postRef, {
-        likedBy: arrayUnion(userId),
-        likeCount: increment(1),
-      });
-
-      // 🔺 add points to post owner
-      if (post.uid) {
-        await updateDoc(doc(db, "students", post.uid), {
-          points: increment(2),
+        if (post.uid) {
+          await updateDoc(doc(db, "students", post.uid), { points: increment(-2) });
+        }
+      } else {
+        await updateDoc(postRef, {
+          likedBy: arrayUnion(userId),
+          likeCount: increment(1),
         });
+        if (post.uid) {
+          await updateDoc(doc(db, "students", post.uid), { points: increment(2) });
+        }
       }
+    } catch (e) {
+      console.log("Like error:", e);
     }
-  } catch (e) {
-    console.log("Like error:", e);
-  }
-};
+  };
 
   const defaultRenderer = (post) => {
     const imgUri = post.imageUrl || post.previewUrl || null;
-
     const isLiked = post.likedBy?.includes(userId);
+    // Check if the current user is the author of this post
+    const isOwner = userId === post.uid || userId === post.authorId;
 
     return (
       <View style={s.card}>
@@ -176,9 +514,7 @@ export default function UniversalPostsFeed({
           {showAvatar && (
             <Image
               source={{
-                uri:
-                  post.authorAvatar ||
-                  "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                uri: post.authorAvatar || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
               }}
               style={s.avatar}
             />
@@ -189,6 +525,13 @@ export default function UniversalPostsFeed({
             </Text>
             <Text style={s.sub}>shared an update</Text>
           </View>
+
+          {/* DELETE OPTION: Only visible to post owner */}
+          {isOwner && (
+            <TouchableOpacity onPress={() => deletePost(post.id)} style={s.deleteBtn}>
+              <Feather name="trash-2" size={18} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {post.caption && <Text style={s.caption}>{post.caption}</Text>}
@@ -197,13 +540,14 @@ export default function UniversalPostsFeed({
         )}
 
         <View style={s.actions}>
-          <TouchableOpacity onPress={() => like(post)}>
+          <TouchableOpacity onPress={() => like(post)} style={s.actionBtn}>
             <Text style={[s.actionText, isLiked && s.liked]}>
               👍 {isLiked ? "Liked" : "Like"} ({post.likeCount || 0})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={s.actionBtn}
             onPress={() => {
               setSelectedPost(post);
               setShowComments(true);
@@ -213,8 +557,8 @@ export default function UniversalPostsFeed({
               💬 Comment ({post.commentCount || 0})
             </Text>
           </TouchableOpacity>
-
-          <Text style={s.actionText}>📤 Share</Text>
+          
+          {/* Share option removed as requested */}
         </View>
       </View>
     );
@@ -237,38 +581,34 @@ export default function UniversalPostsFeed({
   }
 
   return (
-  <>
-  <FlatList
-    ListHeaderComponent={ListHeaderComponent}
-    data={items}
-    renderItem={render}
-    keyExtractor={(it) => it.id}
-    contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120 }}
-    onEndReachedThreshold={0.3}
-    onEndReached={fetchMore}
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }
-  />
+    <>
+      <FlatList
+        ListHeaderComponent={ListHeaderComponent}
+        data={items}
+        renderItem={render}
+        keyExtractor={(it) => it.id}
+        contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120 }}
+        onEndReachedThreshold={0.3}
+        onEndReached={fetchMore}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      />
 
-  <CommentsModal
-    visible={showComments}
-    onClose={() => setShowComments(false)}
-    post={selectedPost}
-    userId={userId}
-    userName={userName}
-  />
-</>
-  
-  
-);
-
+      <CommentsModal
+        visible={showComments}
+        onClose={() => setShowComments(false)}
+        post={selectedPost}
+        userId={userId}
+        userName={userName}
+      />
+    </>
+  );
 }
 
 const s = StyleSheet.create({
   loading: { padding: 16, alignItems: "center" },
   empty: { textAlign: "center", color: "#666", marginTop: 12 },
-
   card: {
     backgroundColor: "#fff",
     padding: 12,
@@ -286,9 +626,10 @@ const s = StyleSheet.create({
     marginRight: 10,
     backgroundColor: "#eee",
   },
-  name: { fontWeight: "800" },
+  name: { fontWeight: "800", color: "#0F172A" },
   sub: { fontSize: 12, color: "#6A7A90" },
-  caption: { marginVertical: 6 },
+  deleteBtn: { padding: 8 },
+  caption: { marginVertical: 6, color: "#475569", lineHeight: 20 },
   image: {
     width: "100%",
     height: 180,
@@ -297,15 +638,17 @@ const s = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start", // Changed to align items left since Share is gone
     marginTop: 10,
+    gap: 30, // Space between Like and Comment
+    paddingLeft: 10,
   },
+  actionBtn: { flexDirection: 'row', alignItems: 'center' },
   actionText: {
-  fontWeight: "600",
-  color: "#555",
-},
-
-liked: {
-  color: "#1877F2",
-},
+    fontWeight: "600",
+    color: "#555",
+  },
+  liked: {
+    color: "#1877F2",
+  },
 });

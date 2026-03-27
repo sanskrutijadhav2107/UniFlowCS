@@ -1,159 +1,173 @@
-import { Feather } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
+  ActivityIndicator, Alert,
   Image,
-  Linking,
+  Platform, SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
-import { storage } from "../../firebase";
+import { db } from "../../firebase";
 
-const { width } = Dimensions.get("window");
+// 🎨 BRAND UNIFIED COLORS
 const COLORS = {
-  primary: "#6366F1", // Indigo theme for Faculty
-  secondary: "#4338CA",
-  accent: "#F59E0B",
+  primaryDark: "#1A50C8",
+  primary: "#2D6EEF",
   bg: "#F8FAFF",
-  textTitle: "#1E293B",
+  white: "#FFFFFF",
+  textMain: "#0F172A",
   textSub: "#64748B",
+  danger: "#EF4444",
+  success: "#10B981",
 };
 
 export default function FacultyProfile() {
   const router = useRouter();
   const [faculty, setFaculty] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => { loadFaculty(); }, []);
+  useEffect(() => {
+    loadFaculty();
+  }, []);
 
   const loadFaculty = async () => {
     try {
-      const saved = await AsyncStorage.getItem("faculty") || await AsyncStorage.getItem("currentUser");
-      if (saved) setFaculty(JSON.parse(saved));
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+      // 1. Check multiple keys for the session
+      const localFaculty = await AsyncStorage.getItem("faculty");
+      const localUser = await AsyncStorage.getItem("currentUser");
+      
+      let sessionData = null;
+      if (localFaculty) sessionData = JSON.parse(localFaculty);
+      else if (localUser) sessionData = JSON.parse(localUser);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      setUploading(true);
-      try {
-        const res = await fetch(result.assets[0].uri);
-        const blob = await res.blob();
-        const sRef = ref(storage, `faculty_profiles/${faculty.email}.jpg`);
-        await uploadBytes(sRef, blob);
-        const url = await getDownloadURL(sRef);
-        setFaculty({ ...faculty, photo: url });
-        await AsyncStorage.setItem("faculty", JSON.stringify({ ...faculty, photo: url }));
-      } catch (e) {
-        Alert.alert("Error", "Could not update photo.");
-      } finally {
-        setUploading(false);
+      if (!sessionData || !sessionData.email) {
+        router.replace("/"); 
+        return;
       }
+
+      setFaculty(sessionData);
+
+      // 2. Fetch fresh details using the email as the Document ID
+      const docRef = doc(db, "faculty", sessionData.email.trim()); 
+      const snap = await getDoc(docRef);
+
+      if (snap.exists()) {
+        const cloudData = snap.data();
+        const mergedData = { ...sessionData, ...cloudData };
+        setFaculty(mergedData);
+        await AsyncStorage.setItem("faculty", JSON.stringify(mergedData));
+      }
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
+  const handleLogout = () => {
+    Alert.alert("Logout", "Sign out from Faculty Portal?", [
+      { text: "Cancel", style: "cancel" },
+      { 
+        text: "Logout", 
+        style: "destructive", 
+        onPress: async () => {
+          await AsyncStorage.clear();
+          if (router.canDismiss()) router.dismissAll();
+          router.replace("/");
+        } 
+      }
+    ]);
+  };
+
+  if (loading && !faculty) return (
+    <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>
+  );
 
   return (
-    <View style={styles.mainContainer}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={[COLORS.primary, COLORS.secondary]} style={styles.header}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatarBorder}>
-              <Image 
-                source={{ uri: faculty?.photo || `https://ui-avatars.com/api/?name=${faculty?.name}&background=random` }} 
-                style={styles.avatar} 
-              />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={styles.header}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <Image 
+              source={{ uri: faculty?.photo || `https://ui-avatars.com/api/?name=${faculty?.name || 'User'}&background=2D6EEF&color=fff` }} 
+              style={styles.avatar} 
+            />
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.nameText}>{faculty?.name || "Faculty Member"}</Text>
+              <Text style={styles.deptText}>{faculty?.education || "Senior Faculty"}</Text>
             </View>
-            <TouchableOpacity style={styles.editBtn} onPress={pickImage}>
-              {uploading ? <ActivityIndicator size="small" color="white" /> : <Feather name="camera" size={16} color="white" />}
-            </TouchableOpacity>
           </View>
-          <Text style={styles.nameText}>{faculty?.name}</Text>
-          <Text style={styles.deptText}>{faculty?.education || "Senior Faculty Member"}</Text>
-        </LinearGradient>
+        </SafeAreaView>
+      </LinearGradient>
 
-        <View style={styles.content}>
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Academic Profile</Text>
-            
-            <ModernRow icon="mail" label="Institutional Email" value={faculty?.email || "N/A"} />
-            <ModernRow icon="award" label="Designation" value={faculty?.role || "Faculty"} />
-            <ModernRow icon="phone" label="Contact Number" value={faculty?.phone || "Not provided"} />
-            
-            {faculty?.linkedin && (
-              <ModernRow 
-                icon="linkedin" 
-                label="LinkedIn" 
-                value="Connect with Faculty" 
-                onPress={() => Linking.openURL(faculty.linkedin)}
-              />
-            )}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionLabel}>Academic Profile</Text>
+
+        <ProfileRow icon="email-outline" label="Institutional Email" value={faculty?.email} />
+        <ProfileRow icon="shield-check-outline" label="Designation" value={faculty?.role || "Faculty"} />
+        <ProfileRow icon="phone-outline" label="Contact" value={faculty?.phone} />
+        <ProfileRow icon="book-open-outline" label="Specialization" value={faculty?.education} />
+
+        {/* LOGOUT BUTTON */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <View style={styles.logoutIconBg}>
+            <MaterialCommunityIcons name="logout" size={22} color={COLORS.danger} />
           </View>
+          <Text style={styles.logoutBtnText}>Logout from UniFlow</Text>
+          <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutWrapper} onPress={() => { AsyncStorage.clear(); router.replace("/"); }}>
-            <Text style={styles.logoutText}>Logout from UniFlow</Text>
-            <Feather name="log-out" size={16} color={COLORS.textSub} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.footerText}>UniFlow Faculty • v1.0.4</Text>
       </ScrollView>
     </View>
   );
 }
 
-
-
-const ModernRow = ({ icon, label, value, onPress }) => (
-  <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
-    <View style={styles.iconContainer}>
-      <Feather name={icon} size={20} color={COLORS.primary} />
+const ProfileRow = ({ icon, label, value }) => (
+  <View style={styles.row}>
+    <View style={styles.rowIcon}>
+      <MaterialCommunityIcons name={icon} size={22} color={COLORS.primary} />
     </View>
-    <View style={{ flex: 1, marginLeft: 16 }}>
-      <Text style={styles.rowLab}>{label}</Text>
-      <Text style={styles.rowVal}>{value}</Text>
+    <View style={{ flex: 1, marginLeft: 15 }}>
+      <Text style={styles.rowLabelText}>{label}</Text>
+      <Text style={styles.rowValueText}>{value || "Not Set"}</Text>
     </View>
-    {onPress && <Feather name="chevron-right" size={18} color="#CBD5E1" />}
-  </TouchableOpacity>
+  </View>
 );
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: "#F8FAFF" },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { paddingVertical: 60, alignItems: "center", borderBottomLeftRadius: 50, borderBottomRightRadius: 50 },
-  avatarWrapper: { position: "relative" },
-  avatarBorder: { padding: 4, borderRadius: 60, backgroundColor: "rgba(255,255,255,0.2)" },
-  avatar: { width: 110, height: 110, borderRadius: 55, borderWidth: 4, borderColor: "white" },
-  editBtn: { position: "absolute", bottom: 0, right: 0, backgroundColor: COLORS.accent || "#10B981", width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", borderWidth: 4, borderColor: COLORS.primary },
-  nameText: { color: "white", fontSize: 24, fontWeight: "800", marginTop: 15 },
-  deptText: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4 },
-  badge: { backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 10 },
-  badgeText: { color: "white", fontSize: 10, fontWeight: "800" },
-  content: { paddingHorizontal: 20, marginTop: 20 },
-  infoSection: { marginTop: 10 },
-  sectionTitle: { fontSize: 12, fontWeight: "800", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 15, marginLeft: 5 },
-  row: { flexDirection: "row", alignItems: "center", backgroundColor: "white", padding: 18, borderRadius: 24, marginBottom: 12, elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10 },
-  iconContainer: { width: 48, height: 48, borderRadius: 16, backgroundColor: "#F0F7FF", justifyContent: "center", alignItems: "center" },
-  rowLab: { fontSize: 11, color: "#64748B", fontWeight: "700" },
-  rowVal: { fontSize: 15, fontWeight: "700", color: "#1E293B", marginTop: 2 },
-  logoutWrapper: { flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 30 },
-  logoutText: { fontSize: 14, fontWeight: "700", color: "#64748B", marginRight: 8 }
+  header: { 
+    paddingTop: Platform.OS === 'ios' ? 10 : 40, paddingBottom: 40, paddingHorizontal: 25, 
+    borderBottomLeftRadius: 40, borderBottomRightRadius: 40, elevation: 5 
+  },
+  headerContent: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  avatar: { width: 85, height: 85, borderRadius: 42.5, borderWidth: 3, borderColor: 'white' },
+  headerTextWrap: { marginLeft: 20 },
+  nameText: { color: "white", fontSize: 22, fontWeight: "900" },
+  deptText: { color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" },
+
+  scrollContent: { padding: 20, paddingBottom: 50 },
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSub, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 16, borderRadius: 24, marginBottom: 12, elevation: 1 },
+  rowIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
+  rowLabelText: { fontSize: 10, fontWeight: '800', color: COLORS.textSub, textTransform: 'uppercase' },
+  rowValueText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
+
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 16, borderRadius: 24, marginTop: 30, borderWidth: 1, borderColor: '#FEE2E2', elevation: 2 },
+  logoutIconBg: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF1F2', justifyContent: 'center', alignItems: 'center' },
+  logoutBtnText: { flex: 1, marginLeft: 15, fontSize: 16, fontWeight: '800', color: COLORS.danger },
+  footerText: { textAlign: 'center', marginTop: 30, color: '#CBD5E1', fontSize: 12, fontWeight: '600' }
 });

@@ -1,45 +1,72 @@
-import { Feather } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  Linking,
+  Modal,
+  Platform,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
-import { storage } from "../../firebase";
+import { db, storage } from "../../firebase";
 
-const COLORS = { primary: "#2D6EEF", secondary: "#1A50C8", accent: "#10B981", bg: "#F8FAFF" };
+// 🎨 UNIFIED COLOR PALETTE
+const COLORS = {
+  primaryDark: "#1A50C8",
+  primary: "#2D6EEF",
+  primaryLight: "#60A5FA",
+  bg: "#F8FAFF",
+  white: "#FFFFFF",
+  textMain: "#0F172A",
+  textSub: "#64748B",
+  accent: "#E0E7FF",
+  danger: "#EF4444",
+  success: "#10B981",
+};
 
 export default function AdminProfile() {
   const router = useRouter();
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editField, setEditField] = useState({ key: "", label: "", value: "" });
+
+  const ADMIN_DOC_ID = "hhB1QTfOA2VVH6zxSMvR";
 
   useEffect(() => { loadAdmin(); }, []);
 
   const loadAdmin = async () => {
-    const saved = await AsyncStorage.getItem("admin") || await AsyncStorage.getItem("currentUser");
-    if (saved) setAdmin(JSON.parse(saved));
-    setLoading(false);
+    try {
+      const saved = await AsyncStorage.getItem("admin");
+      let currentData = saved ? JSON.parse(saved) : {};
+      const docSnap = await getDoc(doc(db, "admin", ADMIN_DOC_ID));
+      if (docSnap.exists()) {
+        currentData = { ...currentData, ...docSnap.data(), id: ADMIN_DOC_ID };
+        await AsyncStorage.setItem("admin", JSON.stringify(currentData));
+      }
+      setAdmin(currentData);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
+      allowsEditing: true, aspect: [1, 1], quality: 0.5,
     });
 
     if (!result.canceled) {
@@ -47,91 +74,155 @@ export default function AdminProfile() {
       try {
         const res = await fetch(result.assets[0].uri);
         const blob = await res.blob();
-        const sRef = ref(storage, `admin_profiles/${admin.email}.jpg`);
+        const sRef = ref(storage, `admin_profiles/${ADMIN_DOC_ID}.jpg`);
         await uploadBytes(sRef, blob);
         const url = await getDownloadURL(sRef);
-        
-        // Save permanently
+        await setDoc(doc(db, "admin", ADMIN_DOC_ID), { photo: url }, { merge: true });
         const updated = { ...admin, photo: url };
         setAdmin(updated);
         await AsyncStorage.setItem("admin", JSON.stringify(updated));
-        Alert.alert("Success", "Profile photo updated!");
-      } catch (e) {
-        Alert.alert("Upload Failed", e.message);
-      } finally {
-        setUploading(false);
-      }
+      } catch (e) { Alert.alert("Upload Failed", e.message); }
+      finally { setUploading(false); }
     }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      await setDoc(doc(db, "admin", ADMIN_DOC_ID), { [editField.key]: editField.value }, { merge: true });
+      const updated = { ...admin, [editField.key]: editField.value };
+      setAdmin(updated);
+      await AsyncStorage.setItem("admin", JSON.stringify(updated));
+      setModalVisible(false);
+    } catch (e) { Alert.alert("Error", "Update failed"); }
+  };
+
+  // 🚪 WORKING LOGOUT WITH NAVIGATION RESET
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { 
+        text: "Logout", 
+        style: "destructive", 
+        onPress: async () => {
+          await AsyncStorage.clear();
+          if (router.canDismiss()) router.dismissAll(); // Clear history stack
+          router.replace("/"); // Go to login
+        } 
+      }
+    ]);
   };
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
 
   return (
-    <View style={styles.mainContainer}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={[COLORS.primary, COLORS.secondary]} style={styles.header}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatarBorder}>
-              <Image source={{ uri: admin?.photo || `https://ui-avatars.com/api/?name=${admin?.name}` }} style={styles.avatar} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      {/* BRANDED HEADER (Matches Timetable) */}
+      <LinearGradient colors={[COLORS.primaryDark, COLORS.primary, COLORS.primaryLight]} style={styles.header}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <View style={styles.avatarContainer}>
+               <Image source={{ uri: admin?.photo || `https://ui-avatars.com/api/?name=${admin?.name}` }} style={styles.avatar} />
+               <TouchableOpacity style={styles.camBtn} onPress={pickImage}>
+                 {uploading ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="camera" size={16} color="white" />}
+               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.editBtn} onPress={pickImage}>
-              {uploading ? <ActivityIndicator size="small" color="white" /> : <Feather name="camera" size={16} color="white" />}
-            </TouchableOpacity>
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.headerTitle}>{admin?.name || "Admin"}</Text>
+              <Text style={styles.headerSub}>System Administrator</Text>
+            </View>
           </View>
-          <Text style={styles.nameText}>{admin?.name || "Admin"}</Text>
-          <View style={styles.badge}><Text style={styles.badgeText}>ROOT ADMINISTRATOR</Text></View>
-        </LinearGradient>
+        </SafeAreaView>
+      </LinearGradient>
 
-        <View style={styles.content}>
-          <View style={styles.infoSection}>
-             <ModernRow icon="mail" label="Email" value={admin?.email || "N/A"} />
-             <ModernRow icon="school" label="Education" value={admin?.education || "N/A"} />
-             <ModernRow icon="phone" label="Phone" value={admin?.phone || "N/A"} />
-             {admin?.linkedin && (
-               <ModernRow icon="linkedin" label="LinkedIn" value="View Profile" onPress={() => Linking.openURL(admin.linkedin)} />
-             )}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionLabel}>Account Settings</Text>
+
+        <ProfileRow icon="account-outline" label="Full Name" value={admin?.name} onPress={() => { setEditField({key:"name", label:"Name", value:admin?.name}); setModalVisible(true); }} />
+        <ProfileRow icon="email-outline" label="Email Address" value={admin?.email} onPress={() => { setEditField({key:"email", label:"Email", value:admin?.email}); setModalVisible(true); }} />
+        <ProfileRow icon="phone-outline" label="Phone" value={admin?.phone} onPress={() => { setEditField({key:"phone", label:"Phone", value:admin?.phone}); setModalVisible(true); }} />
+        <ProfileRow icon="school-outline" label="Education" value={admin?.education} onPress={() => { setEditField({key:"education", label:"Education", value:admin?.education}); setModalVisible(true); }} />
+
+        {/* LOGOUT SECTION */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <View style={styles.logoutIcon}>
+            <MaterialCommunityIcons name="logout" size={22} color={COLORS.danger} />
           </View>
-          <TouchableOpacity style={styles.logoutWrapper} onPress={() => { AsyncStorage.clear(); router.replace("/"); }}>
-            <Text style={styles.logoutText}>Logout</Text>
-            <Feather name="log-out" size={16} color="#64748B" />
-          </TouchableOpacity>
-        </View>
+          <Text style={styles.logoutText}>Logout from Session</Text>
+          <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+        </TouchableOpacity>
+
+        <Text style={styles.footerVersion}>UniFlow Admin • Version 1.0.4</Text>
       </ScrollView>
+
+      {/* EDIT MODAL */}
+      <Modal visible={modalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Update {editField.label}</Text>
+            <TextInput style={styles.input} value={editField.value} onChangeText={t => setEditField({...editField, value:t})} />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCancel}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handleUpdate} style={styles.modalSave}><Text style={styles.saveText}>Save</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
-const ModernRow = ({ icon, label, value, onPress }) => (
-  <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
-    <View style={styles.iconContainer}>
-      <Feather name={icon} size={20} color={COLORS.primary} />
+
+const ProfileRow = ({ icon, label, value, onPress }) => (
+  <TouchableOpacity style={styles.row} onPress={onPress}>
+    <View style={styles.rowIcon}>
+      <MaterialCommunityIcons name={icon} size={22} color={COLORS.primary} />
     </View>
-    <View style={{ flex: 1, marginLeft: 16 }}>
-      <Text style={styles.rowLab}>{label}</Text>
-      <Text style={styles.rowVal}>{value}</Text>
+    <View style={{ flex: 1, marginLeft: 15 }}>
+      <Text style={styles.rowLabelText}>{label}</Text>
+      <Text style={styles.rowValueText}>{value || "Set Info"}</Text>
     </View>
-    {onPress && <Feather name="chevron-right" size={18} color="#CBD5E1" />}
+    <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: "#F8FAFF" },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { paddingVertical: 60, alignItems: "center", borderBottomLeftRadius: 50, borderBottomRightRadius: 50 },
-  avatarWrapper: { position: "relative" },
-  avatarBorder: { padding: 4, borderRadius: 60, backgroundColor: "rgba(255,255,255,0.2)" },
-  avatar: { width: 110, height: 110, borderRadius: 55, borderWidth: 4, borderColor: "white" },
-  editBtn: { position: "absolute", bottom: 0, right: 0, backgroundColor: COLORS.accent || "#10B981", width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", borderWidth: 4, borderColor: COLORS.primary },
-  nameText: { color: "white", fontSize: 24, fontWeight: "800", marginTop: 15 },
-  deptText: { color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 4 },
-  badge: { backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 10 },
-  badgeText: { color: "white", fontSize: 10, fontWeight: "800" },
-  content: { paddingHorizontal: 20, marginTop: 20 },
-  infoSection: { marginTop: 10 },
-  sectionTitle: { fontSize: 12, fontWeight: "800", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 15, marginLeft: 5 },
-  row: { flexDirection: "row", alignItems: "center", backgroundColor: "white", padding: 18, borderRadius: 24, marginBottom: 12, elevation: 2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10 },
-  iconContainer: { width: 48, height: 48, borderRadius: 16, backgroundColor: "#F0F7FF", justifyContent: "center", alignItems: "center" },
-  rowLab: { fontSize: 11, color: "#64748B", fontWeight: "700" },
-  rowVal: { fontSize: 15, fontWeight: "700", color: "#1E293B", marginTop: 2 },
-  logoutWrapper: { flexDirection: "row", justifyContent: "center", alignItems: "center", padding: 30 },
-  logoutText: { fontSize: 14, fontWeight: "700", color: "#64748B", marginRight: 8 }
+  
+  header: { 
+    paddingTop: Platform.OS === 'ios' ? 10 : 40, paddingBottom: 35, paddingHorizontal: 25, 
+    borderBottomLeftRadius: 35, borderBottomRightRadius: 35, elevation: 10 
+  },
+  headerContent: { flexDirection: 'row', alignItems: 'center' },
+  avatarContainer: { position: 'relative' },
+  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: 'white' },
+  camBtn: { position: 'absolute', bottom: 0, right: 0, backgroundColor: COLORS.success, padding: 6, borderRadius: 15, borderWidth: 2, borderColor: COLORS.primaryDark },
+  headerTextWrap: { marginLeft: 20 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: 'white' },
+  headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+
+  scrollContent: { padding: 20, paddingBottom: 50 },
+  sectionLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSub, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 16, borderRadius: 20, marginBottom: 12, elevation: 2 },
+  rowIcon: { width: 45, height: 45, borderRadius: 14, backgroundColor: '#F1F5FF', justifyContent: 'center', alignItems: 'center' },
+  rowLabelText: { fontSize: 10, fontWeight: '800', color: COLORS.textSub, textTransform: 'uppercase' },
+  rowValueText: { fontSize: 16, fontWeight: '700', color: COLORS.textMain },
+
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 16, borderRadius: 20, marginTop: 20, borderWidth: 1, borderColor: '#FEE2E2', elevation: 2 },
+  logoutIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF1F2', justifyContent: 'center', alignItems: 'center' },
+  logoutText: { flex: 1, marginLeft: 15, fontSize: 16, fontWeight: '800', color: COLORS.danger },
+  footerVersion: { textAlign: 'center', marginTop: 30, color: '#CBD5E1', fontSize: 12, fontWeight: '600' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'center', padding: 25 },
+  modalCard: { backgroundColor: 'white', borderRadius: 25, padding: 25 },
+  modalTitle: { fontSize: 18, fontWeight: '900', color: COLORS.textMain, marginBottom: 20 },
+  input: { backgroundColor: '#F8FAFF', borderRadius: 15, padding: 15, borderWidth: 1, borderColor: '#E2E8F0', fontWeight: '600' },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 25, alignItems: 'center' },
+  modalCancel: { marginRight: 20 },
+  cancelText: { fontWeight: '700', color: COLORS.textSub },
+  modalSave: { backgroundColor: COLORS.primary, paddingVertical: 10, paddingHorizontal: 25, borderRadius: 12 },
+  saveText: { color: 'white', fontWeight: '900' }
 });
+

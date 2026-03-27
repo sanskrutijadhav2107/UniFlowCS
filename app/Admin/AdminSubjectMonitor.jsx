@@ -1,115 +1,191 @@
-// app/Admin/AdminSubjectMonitor.jsx
-import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
 import AdminNavbar from "./components/AdminNavbar";
 
-// Sample Data
+const COLORS = {
+  primaryDark: "#1A50C8",
+  primary: "#2D6EEF",
+  primaryLight: "#60A5FA",
+  bg: "#F8FAFF",
+  white: "#FFFFFF",
+  textMain: "#0F172A",
+  textSub: "#64748B",
+  accent: "#E0E7FF",
+  success: "#10B981"
+};
+
 const subjects = [
-  { id: "1", subject: "Python", teacher: "Prof. Sharma", completedUnits: 5 },
-  { id: "2", subject: "DCN", teacher: "Dr. Patel", completedUnits: 5 },
-  { id: "3", subject: "DT", teacher: "Prof. Mehta", completedUnits: 4 },
-  { id: "4", subject: "OOP", teacher: "Dr. Singh", completedUnits: 6 },
+  { id: "1", subject: "Python", teacher: "Prof. Sharma", completedUnits: 5, icon: "language-python" },
+  { id: "2", subject: "DCN", teacher: "Dr. Patel", completedUnits: 3, icon: "lan" },
+  { id: "3", subject: "DT", teacher: "Prof. Mehta", completedUnits: 4, icon: "pencil-ruler" },
+  { id: "4", subject: "OOP", teacher: "Dr. Singh", completedUnits: 6, icon: "cube-outline" },
 ];
 
 export default function AdminSubjectMonitor() {
+  const TOTAL_UNITS = 6;
+
+  const renderSubjectCard = ({ item }) => {
+    const progress = (item.completedUnits / TOTAL_UNITS) * 100;
+    const isCompleted = item.completedUnits === TOTAL_UNITS;
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTop}>
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons name={item.icon} size={24} color={COLORS.primary} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.subjectName}>{item.subject}</Text>
+            <Text style={styles.teacherName}>
+              <MaterialCommunityIcons name="account-tie-outline" size={14} /> {item.teacher}
+            </Text>
+          </View>
+          {isCompleted && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Done</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.progressSection}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>Syllabus Progress</Text>
+            <Text style={[styles.progressPercent, { color: isCompleted ? COLORS.success : COLORS.primary }]}>
+              {Math.round(progress)}%
+            </Text>
+          </View>
+          
+          <View style={styles.progressBarBackground}>
+            <LinearGradient
+              colors={isCompleted ? [COLORS.success, "#34D399"] : [COLORS.primary, COLORS.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressBarFill, { width: `${progress}%` }]}
+            />
+          </View>
+          
+          <View style={styles.unitsRow}>
+            <Text style={styles.unitText}>{item.completedUnits} units covered</Text>
+            <Text style={styles.unitTextTarget}>Target: {TOTAL_UNITS}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {/* Title */}
-      {/* Page Title */}
-                           <View style={styles.header}>
-                             <Text style={styles.pageTitle}>Subject Progress</Text>
-                             <Text style={styles.subTitle}>Welcome</Text>
-                           </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      {/* BRANDED HEADER */}
+      <LinearGradient 
+        colors={[COLORS.primaryDark, COLORS.primary, COLORS.primaryLight]} 
+        style={styles.header}
+      >
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>Subject Progress</Text>
+              <Text style={styles.headerSub}>Monitoring Academic Coverage</Text>
+            </View>
+            <View style={styles.headerIconCircle}>
+              <MaterialCommunityIcons name="finance" size={24} color="white" />
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-      {/* Subject List */}
       <FlatList
         data={subjects}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 120 }} // space for navbar
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.subject}>{item.subject}</Text>
-            <Text style={styles.teacher}>{item.teacher}</Text>
-
-            {/* Progress Bar */}
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${(item.completedUnits / 6) * 100}%` },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>
-              {item.completedUnits} / 6 Units Completed
-            </Text>
-          </View>
-        )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={renderSubjectCard}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No subjects being tracked.</Text>
+        }
       />
 
-      {/* Bottom Navbar */}
       <AdminNavbar />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F5F5", paddingHorizontal: 15 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  
   // Header
   header: {
-   
-    paddingTop: 30,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#E3F0FF",
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-    
+    height: 150,
+    paddingHorizontal: 25,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    justifyContent: 'center',
+    elevation: 10,
+    shadowColor: COLORS.primaryDark,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#146ED7",
+  headerContent: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginTop: Platform.OS === 'android' ? 10 : 0 
   },
-  subTitle: {
-    fontSize: 14,
-    color: "#146ED7",
-    marginTop: 4,
-  },
+  headerTitle: { color: 'white', fontSize: 24, fontWeight: '900' },
+  headerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
+  headerIconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+
+  // List
+  listContent: { paddingHorizontal: 20, paddingTop: 25, paddingBottom: 120 },
+  
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 18,
     elevation: 4,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
   },
-  subject: { fontSize: 16, fontWeight: "bold", color: "#146ED7" },
-  teacher: { fontSize: 14, color: "#555", marginBottom: 8 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15
+  },
+  textContainer: { flex: 1 },
+  subjectName: { fontSize: 18, fontWeight: '800', color: COLORS.textMain },
+  teacherName: { fontSize: 13, color: COLORS.textSub, marginTop: 2, fontWeight: '600' },
+  
+  badge: { backgroundColor: '#D1FAE5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { color: COLORS.success, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+
+  // Progress UI
+  progressSection: { marginTop: 5 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  progressLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSub },
+  progressPercent: { fontSize: 14, fontWeight: '900' },
+  
   progressBarBackground: {
     height: 10,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 6,
-    overflow: "hidden",
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   progressBarFill: {
-    height: "100%",
-    backgroundColor: "#146ED7",
+    height: '100%',
+    borderRadius: 10,
   },
-  progressText: {
-    fontSize: 12,
-    color: "#333",
-    marginTop: 5,
-    fontWeight: "500",
-  },
+  unitsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  unitText: { fontSize: 11, fontWeight: '700', color: COLORS.textMain },
+  unitTextTarget: { fontSize: 11, fontWeight: '600', color: COLORS.textSub },
+
+  emptyText: { textAlign: 'center', marginTop: 40, color: COLORS.textSub, fontWeight: '600' }
 });
