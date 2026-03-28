@@ -323,6 +323,7 @@
 
 
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -349,7 +350,6 @@ import {
   View,
 } from "react-native";
 import { db } from "../../firebase"; // Adjust path to your firebase config
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // 🎨 BRAND UNIFIED COLORS
 const COLORS = {
@@ -372,6 +372,7 @@ export default function NoticeBoard() {
   const [loading, setLoading] = useState(true);
   const [facultyName, setFacultyName] = useState("");
   const scrollViewRef = useRef();
+  const [facultyPhoto, setFacultyPhoto] = useState("");
 
   // Cloudinary Config
   const cloudName = "dveatasry";
@@ -399,7 +400,7 @@ export default function NoticeBoard() {
 
       // adjust if needed
       setFacultyName(parsed.name || parsed.fullName || "Faculty");
-    }
+      setFacultyPhoto(parsed.photo || "");    }
   };
 
   loadFaculty();
@@ -437,7 +438,8 @@ export default function NoticeBoard() {
         description: description.trim() || null,
         mediaUrl: mediaUrl,
         createdAt: serverTimestamp(),
-        postedBy: facultyName, 
+        postedBy: facultyName,
+        authorPhoto: facultyPhoto || null, 
       });
 
       setTitle("");
@@ -499,9 +501,14 @@ export default function NoticeBoard() {
             notices.map((n) => (
               <View key={n.id} style={styles.noticeCard}>
                 <View style={styles.cardHeader}>
-                  <View style={styles.authorCircle}>
-                    <Text style={styles.authorLetter}>{n.postedBy?.charAt(0) || "F"}</Text>
-                  </View>
+                  <Image
+                    source={{
+                      uri:
+                        n.authorPhoto ||
+                        `https://ui-avatars.com/api/?name=${n.postedBy || "F"}&background=2D6EEF&color=fff`,
+                    }}
+                    style={styles.avatar}
+                  />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.authorName}>{n.postedBy || "Faculty"}</Text>
                     <Text style={styles.timeText}>
@@ -652,5 +659,11 @@ const styles = StyleSheet.create({
   sendBtnText: { color: 'white', fontWeight: '900', marginLeft: 8 },
   
   uploadingOverlay: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  uploadingText: { marginLeft: 10, fontSize: 12, color: COLORS.primary, fontWeight: '800' }
+  uploadingText: { marginLeft: 10, fontSize: 12, color: COLORS.primary, fontWeight: '800' },
+
+  avatar: {
+  width: 42,
+  height: 42,
+  borderRadius: 21,
+},
 });

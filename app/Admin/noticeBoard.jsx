@@ -388,9 +388,11 @@ export default function AdminNoticeBoard() {
   const [selectedImageUri, setSelectedImageUri] = useState(null);
   const scrollViewRef = useRef();
   const [adminName, setAdminName] = useState("");
+  const [adminPhoto, setAdminPhoto] = useState(""); 
   // Cloudinary config
   const cloudName = "dveatasry"; 
   const uploadPreset = "unsigned_preset"; 
+  
 
   useEffect(() => {
     (async () => {
@@ -419,6 +421,7 @@ export default function AdminNoticeBoard() {
 
       // adjust if needed
       setAdminName(parsed.name || parsed.fullName || "Admin");
+setAdminPhoto(parsed.photo || "");
     }
   };
 
@@ -468,6 +471,7 @@ export default function AdminNoticeBoard() {
         mediaUrl: mediaUrl,
         createdAt: serverTimestamp(),
         postedBy: adminName,
+        authorPhoto: adminPhoto || null,
       });
       setNotice("");
       setMediaUri(null);
@@ -530,7 +534,11 @@ export default function AdminNoticeBoard() {
           {notices.map((n) => (
             <View key={n.id} style={styles.noticeRow}>
               <Image
-                source={{ uri: "https://cdn-icons-png.flaticon.com/512/219/219969.png" }}
+                source={{
+                  uri:
+                    n.authorPhoto ||
+                    `https://ui-avatars.com/api/?name=${n.postedBy || "A"}&background=2D6EEF&color=fff`,
+                }}
                 style={styles.avatar}
               />
               <View style={styles.noticeBubble}>
