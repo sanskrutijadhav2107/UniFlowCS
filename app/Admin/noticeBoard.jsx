@@ -357,7 +357,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   addDoc,
   collection,
@@ -387,7 +387,7 @@ export default function AdminNoticeBoard() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState(null);
   const scrollViewRef = useRef();
-
+  const [adminName, setAdminName] = useState("");
   // Cloudinary config
   const cloudName = "dveatasry"; 
   const uploadPreset = "unsigned_preset"; 
@@ -409,6 +409,21 @@ export default function AdminNoticeBoard() {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+  const loadAdmin = async () => {
+    const data = await AsyncStorage.getItem("admin");
+
+    if (data) {
+      const parsed = JSON.parse(data);
+
+      // adjust if needed
+      setAdminName(parsed.name || parsed.fullName || "Admin");
+    }
+  };
+
+  loadAdmin();
+}, []);
 
   const uploadImageToCloudinary = async (uri) => {
     setUploading(true);
@@ -452,7 +467,7 @@ export default function AdminNoticeBoard() {
         text: notice.trim() || null,
         mediaUrl: mediaUrl,
         createdAt: serverTimestamp(),
-        postedBy: "Admin",
+        postedBy: adminName,
       });
       setNotice("");
       setMediaUri(null);

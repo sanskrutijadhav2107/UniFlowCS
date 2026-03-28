@@ -349,6 +349,7 @@ import {
   View,
 } from "react-native";
 import { db } from "../../firebase"; // Adjust path to your firebase config
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // 🎨 BRAND UNIFIED COLORS
 const COLORS = {
@@ -369,6 +370,7 @@ export default function NoticeBoard() {
   const [uploading, setUploading] = useState(false);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [facultyName, setFacultyName] = useState("");
   const scrollViewRef = useRef();
 
   // Cloudinary Config
@@ -387,6 +389,21 @@ export default function NoticeBoard() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+  const loadFaculty = async () => {
+    const data = await AsyncStorage.getItem("faculty");
+
+    if (data) {
+      const parsed = JSON.parse(data);
+
+      // adjust if needed
+      setFacultyName(parsed.name || parsed.fullName || "Faculty");
+    }
+  };
+
+  loadFaculty();
+}, []);
 
   const uploadImageToCloudinary = async (uri) => {
     setUploading(true);
@@ -420,7 +437,7 @@ export default function NoticeBoard() {
         description: description.trim() || null,
         mediaUrl: mediaUrl,
         createdAt: serverTimestamp(),
-        postedBy: "Faculty Member", 
+        postedBy: facultyName, 
       });
 
       setTitle("");
